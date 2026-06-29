@@ -1,4 +1,4 @@
-let id = 'ec872d8f-72b0-4a04-b612-0327d85e18ed';
+let id = '71701f50-db74-4774-ab0b-9d709c60051e';
 let paddrs=[atob('cHJveHlpcC5hbWNsdWJzLmNhbWR2ci5vcmc='), atob('cHJveHlpcC5hbWNsdWJzLmtvem93LmNvbQ==')]; let paddrDefaul=paddrs[Math.floor(Math.random() * paddrs.length)]; let pnumDefaul=atob('NDQz'); let pDomainDefaul=[]; let p64Defaul=false; let p64DnUrl=atob('aHR0cHM6Ly8xLjEuMS4xL2Rucy1xdWVyeQ=='); let p64PrefixDefaul=atob('MjYwMjpmYzU5OmIwOjY0Ojo='); let p64DomainDefaul=[]; let s5Defaul=''; let parsedS5Defaul={}; let durlDefaul=atob('aHR0cHM6Ly9za3kucmV0aGlua2Rucy5jb20vMTotUGZfX19fXzlfOEFfQU1BSWdFOGtNQUJWRERtS09IVEFLZz0='); let fname=atob('5pWw5a2X5aWX5Yip'); let ytName=atob('aHR0cHM6Ly95b3V0dWJlLmNvbS9AYW1fY2x1YnM/c3ViX2NvbmZpcm1hdGlvbj0x'); let tgName=atob('aHR0cHM6Ly90Lm1lL2FtX2NsdWJz'); let ghName=atob('aHR0cHM6Ly9naXRodWIuY29tL2FtY2x1YnMvYW0tY2YtdHVubmVs'); let bName=atob('aHR0cHM6Ly9hbWNsdWJzcy5jb20='); let pName='5pWw5a2X5aWX5Yip'; let enableLog=true;
 import { connect } from 'cloudflare:sockets';
 if (!ivui(id)) { throw new Error('err'); }
