@@ -1,9 +1,9 @@
-name: JS混淆-独立输出混淆文件
+name: JS轻量混淆 输出独立snippets.obf.js
 on:
   push:
-    branches: [ main ] # 自行替换分支名
+    branches: [ main ] # 修改为你的分支
     paths:
-      - 'snippets.js'
+      - snippets.js
   workflow_dispatch:
 
 permissions:
@@ -13,54 +13,55 @@ jobs:
   obfuscate:
     runs-on: ubuntu-latest
     steps:
-      - name: 拉取仓库代码
+      - name: 拉取代码
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - name: 配置 Node.js 24 LTS
+      - name: Node.js 24 LTS
         uses: actions/setup-node@v5
         with:
           node-version: 24
 
-      - name: 全局安装混淆工具
+      - name: 安装混淆工具
         run: npm install -g javascript-obfuscator
 
-      # 调试步骤：打印版本，方便后续排查参数
-      - name: 查看混淆器版本与支持参数
+      - name: 检查文件
         run: |
-          javascript-obfuscator --version
-          javascript-obfuscator --help
-
-      # 校验源文件是否存在
-      - name: 校验 snippets.js
-        run: |
+          ls -la
           if [ ! -f "snippets.js" ]; then
-            echo "错误：根目录未找到 snippets.js"
+            echo "ERROR: 缺失源文件 snippets.js"
             exit 1
           fi
-          ls -la
+          echo "源文件大小:"
+          ls -lh snippets.js
 
-      # 移除废弃 --rotate-string-array 参数，其余混淆配置保留
-      - name: 执行混淆，生成独立文件 snippets.obf.js
+      # 【轻量化低体积混淆，无膨胀参数】
+      # 关闭控制流扁平化、属性重命名、数字表达式等高体积选项
+      - name: 执行混淆
         run: |
           javascript-obfuscator snippets.js \
             --compact true \
             --string-array true \
             --string-array-encoding base64 \
-            --string-array-shuffle true \
+            --string-array-shuffle false \
             --rename-globals false \
+            --control-flow-flattening false \
             --numbers-to-expressions false \
             --output snippets.obf.js
 
-      - name: 自动提交推送混淆产物
+      - name: 打印混淆后文件大小
+        run: ls -lh snippets.obf.js
+
+      # 提交推送
+      - name: Commit & Push
         run: |
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "actions@github.com"
           git add snippets.obf.js
           if [[ -n "$(git status --porcelain)" ]]; then
-            git commit -m "Auto generate obfuscated snippets.obf.js [skip ci]"
+            git commit -m "Light obfuscate snippets.obf.js [skip ci]"
             git push
           else
-            echo "混淆文件无变动，跳过提交"
+            echo "文件无变化，跳过提交"
           fi
