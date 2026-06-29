@@ -4,8 +4,5 @@
   "private": true,
   "devDependencies": {
     "javascript-obfuscator": "^4.1.0"
-  },
-  "scripts": {
-    "build": "javascript-obfuscator snippets.js --output dist/snippets.js --compact true"
   }
 }
