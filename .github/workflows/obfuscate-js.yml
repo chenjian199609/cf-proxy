@@ -1,4 +1,4 @@
-name: JS混淆-保留网页 控体积隐藏代理关键词
+name: JS混淆-保留网页 无terser防报错
 on:
   push:
     branches: [ main ]
@@ -15,26 +15,23 @@ jobs:
     steps:
       - name: 拉取仓库代码
         uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
 
       - name: Node.js 24 LTS
         uses: actions/setup-node@v5
         with:
           node-version: 24
 
-      - name: 安装混淆+压缩工具
-        run: npm install -g javascript-obfuscator terser
+      - name: 仅安装混淆器（不再装terser）
+        run: npm install -g javascript-obfuscator
 
-      - name: 校验源文件存在与JS语法
+      - name: 校验源文件语法
         run: |
-          test -f snippets.js || (echo "ERROR: 缺失 snippets.js" && exit 1)
+          test -f snippets.js || (echo "缺失snippets.js" && exit 1)
           node -c snippets.js
-          echo "原始文件大小:"
           ls -lh snippets.js
 
-      # 核心混淆配置：仅加密字符串，关闭体积膨胀参数，无废弃flag
-      - name: JS混淆（完整保留网页逻辑，加密所有敏感字符串）
+      # 轻量化混淆：仅加密敏感字符串，不破坏HTML页面模板
+      - name: JS混淆生成snippets.obf.js
         run: |
           javascript-obfuscator snippets.js \
             --compact true \
@@ -47,25 +44,15 @@ jobs:
             --numbers-to-expressions false \
             --output snippets.obf.js
 
-      # Terser极致压缩抵消字符串数组带来的体积增量，防止超32KB
-      - name: 轻量压缩（不压缩模板字符串）
-        run: |
-          terser snippets.obf.js -o snippets.obf.js \
-            -c drop_console=false,dead_code=true,unsafe_strings=false \
-            -m toplevel=false
-
-      - name: 输出混淆后文件大小
+      - name: 输出混淆文件大小
         run: ls -lh snippets.obf.js
 
-      # 自动提交混淆产物，[skip ci] 防止循环触发CI
-      - name: Commit & Push 混淆文件
+      - name: 提交混淆文件
         run: |
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "actions@github.com"
           git add snippets.obf.js
           if [[ -n "$(git status --porcelain)" ]]; then
-            git commit -m "Obfuscate JS, keep web page function [skip ci]"
+            git commit -m "Obfuscate keep web page [skip ci]"
             git push
-          else
-            echo "文件无变更，跳过提交"
           fi
