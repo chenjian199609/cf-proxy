@@ -1,7 +1,7 @@
-name: JS混淆-保留源码输出独立混淆文件
+name: JS混淆-独立输出混淆文件
 on:
   push:
-    branches: [ main ] # 替换你的分支
+    branches: [ main ] # 自行替换分支名
     paths:
       - 'snippets.js'
   workflow_dispatch:
@@ -22,12 +22,27 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 24
-          # 这里彻底删除 cache 整一行，不再触发 lock 文件检测
 
       - name: 全局安装混淆工具
         run: npm install -g javascript-obfuscator
 
-      - name: 混淆生成独立文件 snippets.obf.js
+      # 调试步骤：打印版本，方便后续排查参数
+      - name: 查看混淆器版本与支持参数
+        run: |
+          javascript-obfuscator --version
+          javascript-obfuscator --help
+
+      # 校验源文件是否存在
+      - name: 校验 snippets.js
+        run: |
+          if [ ! -f "snippets.js" ]; then
+            echo "错误：根目录未找到 snippets.js"
+            exit 1
+          fi
+          ls -la
+
+      # 移除废弃 --rotate-string-array 参数，其余混淆配置保留
+      - name: 执行混淆，生成独立文件 snippets.obf.js
         run: |
           javascript-obfuscator snippets.js \
             --compact true \
@@ -38,11 +53,10 @@ jobs:
             --string-array-shuffle true \
             --rename-globals true \
             --rename-properties true \
-            --rotate-string-array true \
             --numbers-to-expressions true \
             --output snippets.obf.js
 
-      - name: 自动提交推送混淆文件
+      - name: 自动提交推送混淆产物
         run: |
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "actions@github.com"
@@ -51,5 +65,5 @@ jobs:
             git commit -m "Auto generate obfuscated snippets.obf.js [skip ci]"
             git push
           else
-            echo "混淆文件无变更，跳过提交"
+            echo "混淆文件无变动，跳过提交"
           fi
