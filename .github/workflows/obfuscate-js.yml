@@ -1,4 +1,4 @@
-name: JS轻量极小体积混淆
+name: JS混淆-保留网页 控体积隐藏代理关键词
 on:
   push:
     branches: [ main ]
@@ -18,52 +18,54 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 配置 Node.js 24 LTS
+      - name: Node.js 24 LTS
         uses: actions/setup-node@v5
         with:
           node-version: 24
 
-      - name: 安装工具
-        run: |
-          npm install -g javascript-obfuscator terser
+      - name: 安装混淆+压缩工具
+        run: npm install -g javascript-obfuscator terser
 
-      - name: 校验源文件并打印原始大小
+      - name: 校验源文件存在与JS语法
         run: |
-          test -f snippets.js || (echo "缺失 snippets.js" && exit 1)
-          echo "原始文件大小："
-          ls -lh snippets.js
-          # 预先校验JS语法
+          test -f snippets.js || (echo "ERROR: 缺失 snippets.js" && exit 1)
           node -c snippets.js
+          echo "原始文件大小:"
+          ls -lh snippets.js
 
-      # 最低负载混淆，几乎不增加代码体积
-      - name: 基础混淆
+      # 核心混淆配置：仅加密字符串，关闭体积膨胀参数，无废弃flag
+      - name: JS混淆（完整保留网页逻辑，加密所有敏感字符串）
         run: |
           javascript-obfuscator snippets.js \
             --compact true \
-            --string-array false \
+            --string-array true \
+            --string-array-encoding rc4 \
+            --string-array-shuffle false \
             --control-flow-flattening false \
             --rename-globals false \
+            --rename-properties false \
             --numbers-to-expressions false \
             --output snippets.obf.js
 
-      # terser 极致压缩，删减空格、变量短名、删除注释
-      - name: 二次强力压缩瘦身
+      # Terser极致压缩抵消字符串数组带来的体积增量，防止超32KB
+      - name: 二次代码瘦身压缩
         run: |
           terser snippets.obf.js -o snippets.obf.js \
-            -c drop_console=true,dead_code=true \
+            -c drop_console=false,dead_code=true \
             -m toplevel=true
 
-      - name: 打印混淆压缩后文件大小
+      - name: 输出混淆后文件大小
         run: ls -lh snippets.obf.js
 
-      - name: 提交推送
+      # 自动提交混淆产物，[skip ci] 防止循环触发CI
+      - name: Commit & Push 混淆文件
         run: |
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "actions@github.com"
           git add snippets.obf.js
           if [[ -n "$(git status --porcelain)" ]]; then
-            git commit -m "Min tiny obfuscate snippets.obf.js [skip ci]"
+            git commit -m "Obfuscate JS, keep web page function [skip ci]"
             git push
           else
-            echo "文件无变动，跳过提交"
+            echo "文件无变更，跳过提交"
           fi
