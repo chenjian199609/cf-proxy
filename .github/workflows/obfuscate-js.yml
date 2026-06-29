@@ -1,4 +1,4 @@
-name: JS混淆-安全替换代理敏感词+控体积
+name: JS纯混淆 隐藏代理关键词 无替换不报错
 on:
   push:
     branches: [ main ]
@@ -23,67 +23,17 @@ jobs:
         with:
           node-version: 24
 
-      - name: 安装依赖工具
+      - name: 安装工具
         run: npm install -g javascript-obfuscator terser
 
-      - name: 原始文件语法校验
+      - name: 校验原始JS语法
         run: |
-          if [ ! -f "snippets.js" ]; then echo "缺少 snippets.js"; exit 1; fi
+          test -f snippets.js || (echo "缺失 snippets.js" && exit 1)
           node -c snippets.js
-          echo "=== 原始文件大小 ==="
           ls -lh snippets.js
 
-      # 安全替换脚本：使用 \b 单词边界，仅匹配独立完整关键词
-      - name: 安全替换 v2ray/clash/proxy 等节点敏感词
-        run: |
-          cat > safe-replace.js << 'NODE_SCRIPT'
-          const fs = require("fs");
-          const raw = fs.readFileSync("./snippets.js", "utf8");
-          let code = raw;
-
-          // 关键词映射：完整单词拆分拼接
-          const wordMap = {
-            v2ray: '"v"+"2"+"r"+"a"+"y"',
-            clash: '"c"+"l"+"a"+"s"+"h"',
-            proxy: '"p"+"r"+"o"+"x"+"y"',
-            vmess: '"v"+"m"+"e"+"s"+"s"',
-            vless: '"v"+"l"+"e"+"s"+"s"',
-            trojan: '"t"+"r"+"o"+"j"+"a"+"n"',
-            shadowsocks: '"s"+"h"+"a"+"d"+"o"+"w"+"s"+"o"+"c"+"k"+"s"',
-            ss: '"s"+"s"',
-            socks: '"s"+"o"+"c"+"k"+"s"',
-            node: '"n"+"o"+"d"+"e"',
-            server: '"s"+"e"+"r"+"v"+"e"+"r"',
-            port: '"p"+"o"+"r"+"t"',
-            ws: '"w"+"s"',
-            tcp: '"t"+"c"+"p"',
-            udp: '"u"+"d"+"p"',
-            tls: '"t"+"l"+"s"',
-            grpc: '"g"+"r"+"p"+"c"'
-          };
-
-          // 单词边界正则，只替换独立完整单词，不破坏变量/URL
-          Object.keys(wordMap).forEach(word => {
-            const reg = new RegExp(`\\b${word}\\b`, "g");
-            code = code.replace(reg, wordMap[word]);
-          });
-
-          // 输出临时文件，不覆盖原源码
-          fs.writeFileSync("./snippets.tmp.js", code, "utf8");
-          NODE_SCRIPT
-
-          # 执行替换脚本
-          node safe-replace.js
-
-          # 校验替换后代码语法，出错直接终止
-          node -c snippets.tmp.js
-          # 校验通过再覆盖
-          mv snippets.tmp.js snippets.js
-          rm -f safe-replace.js
-          echo "敏感词替换完成，语法校验通过"
-
-      # 轻量化混淆：RC4字符串加密、关闭所有体积膨胀参数
-      - name: JS混淆生成独立文件 snippets.obf.js
+      # 仅靠混淆加密所有字符串，不需要前置替换，不会破坏代码语法
+      - name: JS混淆 RC4加密全部字符串
         run: |
           javascript-obfuscator snippets.js \
             --compact true \
@@ -96,25 +46,24 @@ jobs:
             --numbers-to-expressions false \
             --output snippets.obf.js
 
-      # Terser压缩抵消字符串数组增加的体积
-      - name: 二次压缩瘦身
+      # 压缩控体积
+      - name: Terser压缩瘦身
         run: |
           terser snippets.obf.js -o snippets.obf.js \
             -c drop_console=true,dead_code=true \
             -m toplevel=true
 
-      - name: 打印最终混淆文件大小
+      - name: 打印文件大小
         run: ls -lh snippets.obf.js
 
-      # 提交推送混淆产物，保留原始snippets.js不修改
-      - name: Commit & Push
+      - name: 提交推送混淆文件
         run: |
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "actions@github.com"
           git add snippets.obf.js
           if [[ -n "$(git status --porcelain)" ]]; then
-            git commit -m "Obfuscate & hide proxy node keywords [skip ci]"
+            git commit -m "Obfuscate hide proxy keywords [skip ci]"
             git push
           else
-            echo "无文件变更，跳过提交"
+            echo "无变更，跳过提交"
           fi
