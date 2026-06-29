@@ -1,0 +1,56 @@
+name: JS混淆-保留源码生成独立混淆文件
+on:
+  push:
+    branches: [ main ] # 修改为你的分支 dev/master
+    paths:
+      - 'snippets.js'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  obfuscate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 拉取仓库代码
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: 配置 Node.js 24 LTS
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: 安装 JS 混淆工具
+        run: npm install -g javascript-obfuscator
+
+      - name: 混淆源码，输出独立文件 snippets.obf.js
+        run: |
+          javascript-obfuscator snippets.js \
+            --compact true \
+            --control-flow-flattening true \
+            --control-flow-flattening-threshold 0.8 \
+            --string-array true \
+            --string-array-encoding base64 \
+            --string-array-shuffle true \
+            --rename-globals true \
+            --rename-properties true \
+            --rotate-string-array true \
+            --numbers-to-expressions true \
+            --output snippets.obf.js
+
+      - name: 提交并推送混淆产物
+        run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "actions@github.com"
+          git add snippets.obf.js
+          # 有变更才提交推送
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git commit -m "Auto generate obfuscated snippets.obf.js [skip ci]"
+            git push
+          else
+            echo "混淆后文件无变动，跳过提交"
+          fi
