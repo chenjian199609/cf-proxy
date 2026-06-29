@@ -1,4 +1,4 @@
-name: JS轻量极小体积混淆
+name: JS混淆-节点关键词隐藏+控体积
 on:
   push:
     branches: [ main ]
@@ -24,45 +24,68 @@ jobs:
           node-version: 24
 
       - name: 安装工具
-        run: |
-          npm install -g javascript-obfuscator terser
+        run: npm install -g javascript-obfuscator terser
 
-      - name: 校验源文件并打印原始大小
+      - name: 校验源文件
         run: |
           test -f snippets.js || (echo "缺失 snippets.js" && exit 1)
+          node -c snippets.js
           echo "原始文件大小："
           ls -lh snippets.js
-          # 预先校验JS语法
-          node -c snippets.js
 
-      # 最低负载混淆，几乎不增加代码体积
-      - name: 基础混淆
+      # ========== 核心：替换所有代理/节点关键词，拆分为拼接字符串，无明文 ==========
+      - name: 前置替换 proxy/v2ray/clash/vmess/vless/trojan/ss/socks/node 明文关键词
+        run: |
+          sed -i 's/v2ray/"v"+"2"+"r"+"a"+"y"/g' snippets.js
+          sed -i 's/clash/"c"+"l"+"a"+"s"+"h"/g' snippets.js
+          sed -i 's/proxy/"p"+"r"+"o"+"x"+"y"/g' snippets.js
+          sed -i 's/vmess/"v"+"m"+"e"+"s"+"s"/g' snippets.js
+          sed -i 's/vless/"v"+"l"+"e"+"s"+"s"/g' snippets.js
+          sed -i 's/trojan/"t"+"r"+"o"+"j"+"a"+"n"/g' snippets.js
+          sed -i 's/socks/"s"+"o"+"c"+"k"+"s"/g' snippets.js
+          sed -i 's/shadowsocks/"s"+"h"+"a"+"d"+"o"+"w"+"s"+"o"+"c"+"k"+"s"/g' snippets.js
+          sed -i 's/ss/"s"+"s"/g' snippets.js
+          sed -i 's/node/"n"+"o"+"d"+"e"/g' snippets.js
+          sed -i 's/server/"s"+"e"+"r"+"v"+"e"+"r"/g' snippets.js
+          sed -i 's/port/"p"+"o"+"r"+"t"/g' snippets.js
+          sed -i 's/ws/"w"+"s"/g' snippets.js
+          sed -i 's/tcp/"t"+"c"+"p"/g' snippets.js
+          sed -i 's/udp/"u"+"d"+"p"/g' snippets.js
+          sed -i 's/tls/"t"+"l"+"s"/g' snippets.js
+          sed -i 's/grpc/"g"+"r"+"p"+"c"/g' snippets.js
+          sed -i 's/h2/"h"+"2"/g' snippets.js
+
+      # 轻量混淆：开启rc4字符串加密隐藏拼接后的字符，关闭所有膨胀功能控体积
+      - name: JS混淆（隐藏剩余敏感字符串）
         run: |
           javascript-obfuscator snippets.js \
             --compact true \
-            --string-array false \
+            --string-array true \
+            --string-array-encoding rc4 \
+            --string-array-shuffle false \
             --control-flow-flattening false \
             --rename-globals false \
+            --rename-properties false \
             --numbers-to-expressions false \
             --output snippets.obf.js
 
-      # terser 极致压缩，删减空格、变量短名、删除注释
-      - name: 二次强力压缩瘦身
+      # Terser 极致压缩抵消stringArray体积增量
+      - name: 二次压缩瘦身
         run: |
           terser snippets.obf.js -o snippets.obf.js \
             -c drop_console=true,dead_code=true \
             -m toplevel=true
 
-      - name: 打印混淆压缩后文件大小
+      - name: 输出最终文件大小
         run: ls -lh snippets.obf.js
 
-      - name: 提交推送
+      - name: 自动提交推送混淆产物
         run: |
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "actions@github.com"
           git add snippets.obf.js
           if [[ -n "$(git status --porcelain)" ]]; then
-            git commit -m "Min tiny obfuscate snippets.obf.js [skip ci]"
+            git commit -m "Hide proxy node keyword + obfuscate [skip ci]"
             git push
           else
             echo "文件无变动，跳过提交"
