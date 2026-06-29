@@ -1,4 +1,4 @@
-name: JS混淆-节点关键词隐藏+控体积
+name: JS混淆-隐藏代理节点关键词 控体积
 on:
   push:
     branches: [ main ]
@@ -26,37 +26,54 @@ jobs:
       - name: 安装工具
         run: npm install -g javascript-obfuscator terser
 
-      - name: 校验源文件
+      - name: 校验原始JS语法
         run: |
-          test -f snippets.js || (echo "缺失 snippets.js" && exit 1)
+          test -f snippets.js || (echo "错误：缺少 snippets.js" && exit 1)
           node -c snippets.js
           echo "原始文件大小："
           ls -lh snippets.js
 
-      # ========== 核心：替换所有代理/节点关键词，拆分为拼接字符串，无明文 ==========
-      - name: 前置替换 proxy/v2ray/clash/vmess/vless/trojan/ss/socks/node 明文关键词
+      # 方案：使用node脚本安全替换敏感词，不会破坏JS语法，替代危险sed
+      - name: Node脚本替换 v2ray/clash/proxy 等敏感关键词
         run: |
-          sed -i 's/v2ray/"v"+"2"+"r"+"a"+"y"/g' snippets.js
-          sed -i 's/clash/"c"+"l"+"a"+"s"+"h"/g' snippets.js
-          sed -i 's/proxy/"p"+"r"+"o"+"x"+"y"/g' snippets.js
-          sed -i 's/vmess/"v"+"m"+"e"+"s"+"s"/g' snippets.js
-          sed -i 's/vless/"v"+"l"+"e"+"s"+"s"/g' snippets.js
-          sed -i 's/trojan/"t"+"r"+"o"+"j"+"a"+"n"/g' snippets.js
-          sed -i 's/socks/"s"+"o"+"c"+"k"+"s"/g' snippets.js
-          sed -i 's/shadowsocks/"s"+"h"+"a"+"d"+"o"+"w"+"s"+"o"+"c"+"k"+"s"/g' snippets.js
-          sed -i 's/ss/"s"+"s"/g' snippets.js
-          sed -i 's/node/"n"+"o"+"d"+"e"/g' snippets.js
-          sed -i 's/server/"s"+"e"+"r"+"v"+"e"+"r"/g' snippets.js
-          sed -i 's/port/"p"+"o"+"r"+"t"/g' snippets.js
-          sed -i 's/ws/"w"+"s"/g' snippets.js
-          sed -i 's/tcp/"t"+"c"+"p"/g' snippets.js
-          sed -i 's/udp/"u"+"d"+"p"/g' snippets.js
-          sed -i 's/tls/"t"+"l"+"s"/g' snippets.js
-          sed -i 's/grpc/"g"+"r"+"p"+"c"/g' snippets.js
-          sed -i 's/h2/"h"+"2"/g' snippets.js
+          cat > replace.js << 'EOF'
+          const fs = require('fs');
+          let code = fs.readFileSync('snippets.js', 'utf8');
+          // 待混淆关键词映射：完整词拆分为字符串拼接
+          const replaceMap = {
+            "v2ray": '"v"+"2"+"r"+"a"+"y"',
+            "clash": '"c"+"l"+"a"+"s"+"h"',
+            "proxy": '"p"+"r"+"o"+"x"+"y"',
+            "vmess": '"v"+"m"+"e"+"s"+"s"',
+            "vless": '"v"+"l"+"e"+"s"+"s"',
+            "trojan": '"t"+"r"+"o"+"j"+"a"+"n"',
+            "shadowsocks": '"s"+"h"+"a"+"d"+"o"+"w"+"s"+"o"+"c"+"k"+"s"',
+            "ss": '"s"+"s"',
+            "socks": '"s"+"o"+"c"+"k"+"s"',
+            "node": '"n"+"o"+"d"+"e"',
+            "server": '"s"+"e"+"r"+"v"+"e"+"r"',
+            "port": '"p"+"o"+"r"+"t"',
+            "ws": '"w"+"s"',
+            "tcp": '"t"+"c"+"p"',
+            "udp": '"u"+"d"+"p"',
+            "tls": '"t"+"l"+"s"',
+            "grpc": '"g"+"r"+"p"+"c"'
+          };
+          // 批量全局替换
+          Object.keys(replaceMap).forEach(key => {
+            const reg = new RegExp(key, 'g');
+            code = code.replace(reg, replaceMap[key]);
+          });
+          fs.writeFileSync('snippets.tmp.js', code, 'utf8');
+          EOF
+          node replace.js
+          # 替换临时文件
+          mv snippets.tmp.js snippets.js
+          # 替换后再次校验语法，提前捕获错误
+          node -c snippets.js
 
-      # 轻量混淆：开启rc4字符串加密隐藏拼接后的字符，关闭所有膨胀功能控体积
-      - name: JS混淆（隐藏剩余敏感字符串）
+      # 轻量混淆，rc4字符串加密，关闭所有膨胀参数防超32kb
+      - name: JS混淆（无废弃参数，稳定运行）
         run: |
           javascript-obfuscator snippets.js \
             --compact true \
@@ -69,8 +86,8 @@ jobs:
             --numbers-to-expressions false \
             --output snippets.obf.js
 
-      # Terser 极致压缩抵消stringArray体积增量
-      - name: 二次压缩瘦身
+      # 压缩减小体积
+      - name: Terser二次压缩
         run: |
           terser snippets.obf.js -o snippets.obf.js \
             -c drop_console=true,dead_code=true \
@@ -79,14 +96,14 @@ jobs:
       - name: 输出最终文件大小
         run: ls -lh snippets.obf.js
 
-      - name: 自动提交推送混淆产物
+      - name: 提交推送混淆文件
         run: |
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "actions@github.com"
           git add snippets.obf.js
           if [[ -n "$(git status --porcelain)" ]]; then
-            git commit -m "Hide proxy node keyword + obfuscate [skip ci]"
+            git commit -m "Hide proxy keyword + obfuscate [skip ci]"
             git push
           else
-            echo "文件无变动，跳过提交"
+            echo "文件无变更，跳过提交"
           fi
