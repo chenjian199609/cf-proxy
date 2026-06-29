@@ -1,7 +1,7 @@
-name: JS轻量混淆 输出独立snippets.obf.js
+name: JS轻量极小体积混淆
 on:
   push:
-    branches: [ main ] # 修改为你的分支
+    branches: [ main ]
     paths:
       - snippets.js
   workflow_dispatch:
@@ -13,55 +13,57 @@ jobs:
   obfuscate:
     runs-on: ubuntu-latest
     steps:
-      - name: 拉取代码
+      - name: 拉取仓库代码
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - name: Node.js 24 LTS
+      - name: 配置 Node.js 24 LTS
         uses: actions/setup-node@v5
         with:
           node-version: 24
 
-      - name: 安装混淆工具
-        run: npm install -g javascript-obfuscator
-
-      - name: 检查文件
+      - name: 安装工具
         run: |
-          ls -la
-          if [ ! -f "snippets.js" ]; then
-            echo "ERROR: 缺失源文件 snippets.js"
-            exit 1
-          fi
-          echo "源文件大小:"
-          ls -lh snippets.js
+          npm install -g javascript-obfuscator terser
 
-      # 【轻量化低体积混淆，无膨胀参数】
-      # 关闭控制流扁平化、属性重命名、数字表达式等高体积选项
-      - name: 执行混淆
+      - name: 校验源文件并打印原始大小
+        run: |
+          test -f snippets.js || (echo "缺失 snippets.js" && exit 1)
+          echo "原始文件大小："
+          ls -lh snippets.js
+          # 预先校验JS语法
+          node -c snippets.js
+
+      # 最低负载混淆，几乎不增加代码体积
+      - name: 基础混淆
         run: |
           javascript-obfuscator snippets.js \
             --compact true \
-            --string-array true \
-            --string-array-encoding base64 \
-            --string-array-shuffle false \
-            --rename-globals false \
+            --string-array false \
             --control-flow-flattening false \
+            --rename-globals false \
             --numbers-to-expressions false \
             --output snippets.obf.js
 
-      - name: 打印混淆后文件大小
+      # terser 极致压缩，删减空格、变量短名、删除注释
+      - name: 二次强力压缩瘦身
+        run: |
+          terser snippets.obf.js -o snippets.obf.js \
+            -c drop_console=true,dead_code=true \
+            -m toplevel=true
+
+      - name: 打印混淆压缩后文件大小
         run: ls -lh snippets.obf.js
 
-      # 提交推送
-      - name: Commit & Push
+      - name: 提交推送
         run: |
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "actions@github.com"
           git add snippets.obf.js
           if [[ -n "$(git status --porcelain)" ]]; then
-            git commit -m "Light obfuscate snippets.obf.js [skip ci]"
+            git commit -m "Min tiny obfuscate snippets.obf.js [skip ci]"
             git push
           else
-            echo "文件无变化，跳过提交"
+            echo "文件无变动，跳过提交"
           fi
