@@ -48,11 +48,11 @@ jobs:
             --output snippets.obf.js
 
       # Terser极致压缩抵消字符串数组带来的体积增量，防止超32KB
-      - name: 二次代码瘦身压缩
+      - name: 轻量压缩（不压缩模板字符串）
         run: |
           terser snippets.obf.js -o snippets.obf.js \
-            -c drop_console=false,dead_code=true \
-            -m toplevel=true
+            -c drop_console=false,dead_code=true,unsafe_strings=false \
+            -m toplevel=false
 
       - name: 输出混淆后文件大小
         run: ls -lh snippets.obf.js
