@@ -1,10 +1,9 @@
-name: JS混淆-保留源码生成独立混淆文件
+name: JS混淆-保留源码输出独立混淆文件
 on:
   push:
-    branches: [ main ] # 修改为你的分支
+    branches: [ main ] # 替换你的分支
     paths:
       - 'snippets.js'
-      - 'package.json'
   workflow_dispatch:
 
 permissions:
@@ -23,16 +22,14 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 24
-          cache: 'npm'
+          # 这里彻底删除 cache 整一行，不再触发 lock 文件检测
 
-      # 本地安装依赖，不再全局安装
-      - name: 安装依赖
-        run: npm install
+      - name: 全局安装混淆工具
+        run: npm install -g javascript-obfuscator
 
-      # 通过 npx 调用本地的 javascript-obfuscator
-      - name: 混淆源码输出独立文件 snippets.obf.js
+      - name: 混淆生成独立文件 snippets.obf.js
         run: |
-          npx javascript-obfuscator snippets.js \
+          javascript-obfuscator snippets.js \
             --compact true \
             --control-flow-flattening true \
             --control-flow-flattening-threshold 0.8 \
@@ -45,7 +42,7 @@ jobs:
             --numbers-to-expressions true \
             --output snippets.obf.js
 
-      - name: 提交推送混淆产物
+      - name: 自动提交推送混淆文件
         run: |
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "actions@github.com"
@@ -54,5 +51,5 @@ jobs:
             git commit -m "Auto generate obfuscated snippets.obf.js [skip ci]"
             git push
           else
-            echo "混淆文件无变动，跳过提交"
+            echo "混淆文件无变更，跳过提交"
           fi
