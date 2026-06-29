@@ -46,14 +46,11 @@ jobs:
         run: |
           javascript-obfuscator snippets.js \
             --compact true \
-            --control-flow-flattening true \
-            --control-flow-flattening-threshold 0.8 \
             --string-array true \
             --string-array-encoding base64 \
             --string-array-shuffle true \
-            --rename-globals true \
-            --rename-properties true \
-            --numbers-to-expressions true \
+            --rename-globals false \
+            --numbers-to-expressions false \
             --output snippets.obf.js
 
       - name: 自动提交推送混淆产物
