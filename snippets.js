@@ -1,47 +1,580 @@
-let id = '71701f50-db74-4774-ab0b-9d709c60051e';
-let paddrs=[atob('cHJveHlpcC5hbWNsdWJzLmNhbWR2ci5vcmc='), atob('cHJveHlpcC5hbWNsdWJzLmtvem93LmNvbQ==')]; let paddrDefaul=paddrs[Math.floor(Math.random() * paddrs.length)]; let pnumDefaul=atob('NDQz'); let pDomainDefaul=[]; let p64Defaul=false; let p64DnUrl=atob('aHR0cHM6Ly8xLjEuMS4xL2Rucy1xdWVyeQ=='); let p64PrefixDefaul=atob('MjYwMjpmYzU5OmIwOjY0Ojo='); let p64DomainDefaul=[]; let s5Defaul=''; let parsedS5Defaul={}; let durlDefaul=atob('aHR0cHM6Ly9za3kucmV0aGlua2Rucy5jb20vMTotUGZfX19fXzlfOEFfQU1BSWdFOGtNQUJWRERtS09IVEFLZz0='); let fname=atob('5pWw5a2X5aWX5Yip'); let ytName=atob('aHR0cHM6Ly95b3V0dWJlLmNvbS9AYW1fY2x1YnM/c3ViX2NvbmZpcm1hdGlvbj0x'); let tgName=atob('aHR0cHM6Ly90Lm1lL2FtX2NsdWJz'); let ghName=atob('aHR0cHM6Ly9naXRodWIuY29tL2FtY2x1YnMvYW0tY2YtdHVubmVs'); let bName=atob('aHR0cHM6Ly9hbWNsdWJzcy5jb20='); let pName='5pWw5a2X5aWX5Yip'; let enableLog=true;
 import { connect } from 'cloudflare:sockets';
-if (!ivui(id)) { throw new Error('err'); }
-export default { async fetch(request, env) { try { const url = new URL(request.url); const c = await rc(url); if (request.headers.get('Upgrade') === 'websocket') { return await websvcExecutorTr(request, c); } switch (url.pathname.toLowerCase()) { case '/': { return await login(request, env); } default: { return Response.redirect(new URL('/', request.url)); } } } catch (err) { return new Response(`Error:${err.message}`, { status: 500 }); } }, };
-/***/
-function log(...args) { if (enableLog) console.log(...args);}
-function error(...args) { if (enableLog) console.error(...args);}
-async function rc(u) { let paddr = u.searchParams.get('PADDR') ?? paddrDefaul; let pnum = pnumDefaul; if (paddr) { const [ip, port] = paddr.split(':'); paddr = ip; pnum = port || pnum; } const rawP64 = u.searchParams.get('P64') ?? p64Defaul; const s5 = u.searchParams.get('S5') ?? s5Defaul; const parsedS5 = (await rps5F(s5, u)) ?? parsedS5Defaul; const s5Enable = parsedS5 && Object.keys(parsedS5).length > 0; let prType = u.searchParams.get(atob('UFJPVF9UWVBF')); if (prType) { prType = prType.toLowerCase(); } const c = { paddr, pnum, pDomain: pDomainDefaul, p64: String(rawP64).toLowerCase() === 'true', p64Prefix: u.searchParams.get('P64PREFIX') ?? p64PrefixDefaul, p64Domain: p64DomainDefaul, s5, parsedS5, s5Enable, durl: u.searchParams.get('D_URL') ?? durlDefaul, prType }; return c; }
-function ivui(u) { const r = /^[0-9a-f]{8}-[0-9a-f]{4}-[4][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i; return r.test(u) }
-const b = []; for (let i = 0; i < 256; ++i) { b.push((i + 256).toString(16).slice(1)) }
-function b64ToBuf(b) { if (!b) { return { earlyData: null, error: null } } try { b = b.replace(/-/g, '+').replace(/_/g, '/'); const d = atob(b); const a = Uint8Array.from(d, (c) => c.charCodeAt(0)); return { earlyData: a.buffer, error: null } } catch (error) { return { earlyData: null, error } } }
-function deb64Utf8(s) { const b = Uint8Array.from(atob(s), c => c.charCodeAt(0)); return new TextDecoder('utf-8').decode(b) }
-function rps5(s5) { let [latter, former] = s5.split("@").reverse(); let username, password, hostname, port; if (former) { const f = former.split(":"); if (f.length !== 2) { throw new Error('err'); } [username, password] = f } const l = latter.split(":"); port = Number(l.pop()); if (isNaN(port)) { throw new Error('err'); } hostname = l.join(":"); const i = hostname.includes(":") && !/^\[.*\]$/.test(hostname); if (i) { throw new Error('err'); } return { username, password, hostname, port } }
-async function rps5F(s5, u) { if (/\/s5?=/.test(u.pathname)) { s5 = u.pathname.split('5=')[1] } else if (/\/socks[5]?:\/\//.test(u.pathname)) { s5 = u.pathname.split('://')[1].split('#')[0] } const a = s5.indexOf('@'); if (a !== -1) { let u = s5.substring(0, a); const r = /^(?:[A-Z0-9+/]{4})*(?:[A-Z0-9+/]{2}==|[A-Z0-9+/]{3}=)?$/i; if (r.test(u) && !u.includes(':')) { u = atob(u) } s5 = `${u}@${s5.substring(a + 1)}` } if (s5) { try { return rps5(s5) } catch (err) { return null } } return null }
-function isIp(s) { const i4 = /^(\d{1,3}\.){3}\d{1,3}$/; const i6 = /^[0-9a-fA-F:]+$/; return i4.test(s) || i6.test(s); }
-async function getDomainToRouteX(a, p, f = false, c) { let finalHost = a; let finalPort = p; try { if (isIp(a)) { return { finalHost, finalPort }; } const safeMatch = (domains, target) => { try { return Array.isArray(domains) && domains.some(domain => mdp(target, domain)); } catch (e) { return false; } }; const resultDomain = safeMatch(c.pDomain, a); const result64Domain = safeMatch(c.p64Domain, a); if (c.s5Enable) { } else if (resultDomain) { finalHost = c.paddr; finalPort = c.pnum || p; } else if (result64Domain || (f && c.p64)) { try { finalHost = await resolveDomainToRouteX(a, c); finalPort = p; } catch (err) { finalHost = c.paddr || a; finalPort = c.pnum || p; } } else if (f) { finalHost = c.paddr || a; finalPort = p; } return { finalHost, finalPort }; } catch (err) { if (f) { finalHost = c.paddr || a; finalPort = p; } return { finalHost, finalPort }; } }
-function mdp(h, p) { if (!h || !p) return false; h = h.toLowerCase(); p = p.toLowerCase(); const r4 = /^(\d{1,3}\.){3}\d{1,3}$/; const r6 = /^\[?([a-f0-9:]+)\]?$/i; if (r4.test(h) || r6.test(h)) { return false } const hp = h.split('.'); const pp = p.split('.'); if (hp.length < pParts.length) return false; for (let i = 1; i <= pParts.length; i++) { if (hp[hp.length - i] !== pp[pp.length - i]) { return false } } return true }
-async function resolveDomainToRouteX(d, c) { try { const r = await fetch(`${p64DnUrl}?name=${d}&type=A`, { headers: { Accept: "application/dns-json", }, }); if (!r.ok) { throw new Error(`err`); } const rs = await r.json(); const ar = rs?.Answer?.find(record => record.type === 1 && record.data); if (!ar) { throw new Error("err"); } const ipv4 = ar.data; const ipv6 = cTox(ipv4, c); return ipv6; } catch (err) { throw new Error(`err`); } }
-function cTox(i4, c) { const p = i4.trim().split('.'); if (p.length !== 4) { throw new Error('err'); } const h = p.map(part => { const n = nber(part); if (!/^\d+$/.test(part) || isNaN(n) || n < 0 || n > 255) { throw new Error(`err`); } return n.toString(16).padStart(2, '0'); }); let w = true; if (!c.p64Prefix || typeof c.p64Prefix !== 'string' || !c.p64Prefix.includes('::')) { throw new Error('err'); } const i = `${h[0]}${h[1]}:${h[2]}${h[3]}`.toLowerCase(); const f = `${c.p64Prefix}${i}`; return w ? `[${f}]` : f; }
-(function () {
-    'use strict'; var ERROR = 'err'; var WINDOW = typeof window === 'object'; var root = WINDOW ? window : {}; if (root.JS_SHA256_NO_WINDOW) { WINDOW = false }; var WEB_WORKER = !WINDOW && typeof self === 'object'; var NODE_JS = !root.JS_SHA256_NO_NODE_JS && typeof process === 'object' && process.versions && process.versions.node; if (NODE_JS) { root = global } else if (WEB_WORKER) { root = self }; var COMMON_JS = !root.JS_SHA256_NO_COMMON_JS && typeof module === 'object' && module.exports; var AMD = typeof define === 'function' && define.amd; var ARRAY_BUFFER = !root.JS_SHA256_NO_ARRAY_BUFFER && typeof ArrayBuffer !== 'undefined'; var HEX_CHARS = '0123456789abcdef'.split(''); var EXTRA = [-2147483648, 8388608, 32768, 128]; var SHIFT = [24, 16, 8, 0]; var K = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2]; var OUTPUT_TYPES = ['hex', 'array', 'digest', 'arrayBuffer']; var blocks = [];
-    if (root.JS_SHA256_NO_NODE_JS || !Array.isArray) { Array.isArray = function (obj) { return Object.prototype.toString.call(obj) === '[object Array]' } }; if (ARRAY_BUFFER && (root.JS_SHA256_NO_ARRAY_BUFFER_IS_VIEW || !ArrayBuffer.isView)) { ArrayBuffer.isView = function (obj) { return typeof obj === 'object' && obj.buffer && obj.buffer.constructor === ArrayBuffer } }; var createOutputMethod = function (outputType, is224) { return function (message) { return new Sha256(is224, true).update(message)[outputType]() } }; var createMethod = function (is224) { var method = createOutputMethod('hex', is224); if (NODE_JS) { method = nodeWrap(method, is224) } method.create = function () { return new Sha256(is224) }; method.update = function (message) { return method.create().update(message) }; for (var i = 0; i < OUTPUT_TYPES.length; ++i) { var type = OUTPUT_TYPES[i]; method[type] = createOutputMethod(type, is224) } return method }; var nodeWrap = function (method, is224) { var crypto = require('node:crypto'); var Buffer = require('node:buffer').Buffer; var algorithm = is224 ? 'sha224' : 'sha256'; var bufferFrom; if (Buffer.from && !root.JS_SHA256_NO_BUFFER_FROM) { bufferFrom = Buffer.from } else { bufferFrom = function (message) { return new Buffer(message) } } var nodeMethod = function (message) { if (typeof message === 'string') { return crypto.createHash(algorithm).update(message, 'utf8').digest('hex') } else { if (message === null || message === undefined) { throw new Error(ERROR); } else if (message.constructor === ArrayBuffer) { message = new Uint8Array(message) } } if (Array.isArray(message) || ArrayBuffer.isView(message) || message.constructor === Buffer) { return crypto.createHash(algorithm).update(bufferFrom(message)).digest('hex') } else { return method(message) } }; return nodeMethod }; var createHmacOutputMethod = function (outputType, is224) { return function (key, message) { return new HmacSha256(key, is224, true).update(message)[outputType]() } };
-    var createHmacMethod = function (is224) { var method = createHmacOutputMethod('hex', is224); method.create = function (key) { return new HmacSha256(key, is224) }; method.update = function (key, message) { return method.create(key).update(message) }; for (var i = 0; i < OUTPUT_TYPES.length; ++i) { var type = OUTPUT_TYPES[i]; method[type] = createHmacOutputMethod(type, is224) } return method };
-    function Sha256(is224, sharedMemory) { if (sharedMemory) { blocks[0] = blocks[16] = blocks[1] = blocks[2] = blocks[3] = blocks[4] = blocks[5] = blocks[6] = blocks[7] = blocks[8] = blocks[9] = blocks[10] = blocks[11] = blocks[12] = blocks[13] = blocks[14] = blocks[15] = 0; this.blocks = blocks } else { this.blocks = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] } if (is224) { this.h0 = 0xc1059ed8; this.h1 = 0x367cd507; this.h2 = 0x3070dd17; this.h3 = 0xf70e5939; this.h4 = 0xffc00b31; this.h5 = 0x68581511; this.h6 = 0x64f98fa7; this.h7 = 0xbefa4fa4 } else { this.h0 = 0x6a09e667; this.h1 = 0xbb67ae85; this.h2 = 0x3c6ef372; this.h3 = 0xa54ff53a; this.h4 = 0x510e527f; this.h5 = 0x9b05688c; this.h6 = 0x1f83d9ab; this.h7 = 0x5be0cd19 } this.block = this.start = this.bytes = this.hBytes = 0; this.finalized = this.hashed = false; this.first = true; this.is224 = is224 };
-    Sha256.prototype.update = function (message) { if (this.finalized) { return } var notString, type = typeof message; if (type !== 'string') { if (type === 'object') { if (message === null) { throw new Error(ERROR); } else if (ARRAY_BUFFER && message.constructor === ArrayBuffer) { message = new Uint8Array(message) } else if (!Array.isArray(message)) { if (!ARRAY_BUFFER || !ArrayBuffer.isView(message)) { throw new Error(ERROR); } } } else { throw new Error(ERROR); } notString = true } var code, index = 0, i, length = message.length, blocks = this.blocks; while (index < length) { if (this.hashed) { this.hashed = false; blocks[0] = this.block; this.block = blocks[16] = blocks[1] = blocks[2] = blocks[3] = blocks[4] = blocks[5] = blocks[6] = blocks[7] = blocks[8] = blocks[9] = blocks[10] = blocks[11] = blocks[12] = blocks[13] = blocks[14] = blocks[15] = 0 } if (notString) { for (i = this.start; index < length && i < 64; ++index) { blocks[i >>> 2] |= message[index] << SHIFT[i++ & 3] } } else { for (i = this.start; index < length && i < 64; ++index) { code = message.charCodeAt(index); if (code < 0x80) { blocks[i >>> 2] |= code << SHIFT[i++ & 3] } else if (code < 0x800) { blocks[i >>> 2] |= (0xc0 | (code >>> 6)) << SHIFT[i++ & 3]; blocks[i >>> 2] |= (0x80 | (code & 0x3f)) << SHIFT[i++ & 3] } else if (code < 0xd800 || code >= 0xe000) { blocks[i >>> 2] |= (0xe0 | (code >>> 12)) << SHIFT[i++ & 3]; blocks[i >>> 2] |= (0x80 | ((code >>> 6) & 0x3f)) << SHIFT[i++ & 3]; blocks[i >>> 2] |= (0x80 | (code & 0x3f)) << SHIFT[i++ & 3] } else { code = 0x10000 + (((code & 0x3ff) << 10) | (message.charCodeAt(++index) & 0x3ff)); blocks[i >>> 2] |= (0xf0 | (code >>> 18)) << SHIFT[i++ & 3]; blocks[i >>> 2] |= (0x80 | ((code >>> 12) & 0x3f)) << SHIFT[i++ & 3]; blocks[i >>> 2] |= (0x80 | ((code >>> 6) & 0x3f)) << SHIFT[i++ & 3]; blocks[i >>> 2] |= (0x80 | (code & 0x3f)) << SHIFT[i++ & 3] } } } this.lastByteIndex = i; this.bytes += i - this.start; if (i >= 64) { this.block = blocks[16]; this.start = i - 64; this.hash(); this.hashed = true } else { this.start = i } } if (this.bytes > 4294967295) { this.hBytes += this.bytes / 4294967296 << 0; this.bytes = this.bytes % 4294967296 } return this };
-    Sha256.prototype.finalize = function () { if (this.finalized) { return } this.finalized = true; var blocks = this.blocks, i = this.lastByteIndex; blocks[16] = this.block; blocks[i >>> 2] |= EXTRA[i & 3]; this.block = blocks[16]; if (i >= 56) { if (!this.hashed) { this.hash() } blocks[0] = this.block; blocks[16] = blocks[1] = blocks[2] = blocks[3] = blocks[4] = blocks[5] = blocks[6] = blocks[7] = blocks[8] = blocks[9] = blocks[10] = blocks[11] = blocks[12] = blocks[13] = blocks[14] = blocks[15] = 0 } blocks[14] = this.hBytes << 3 | this.bytes >>> 29; blocks[15] = this.bytes << 3; this.hash() };
-    Sha256.prototype.hash = function () { var a = this.h0, b = this.h1, c = this.h2, d = this.h3, e = this.h4, f = this.h5, g = this.h6, h = this.h7, blocks = this.blocks, j, s0, s1, maj, t1, t2, ch, ab, da, cd, bc; for (j = 16; j < 64; ++j) { t1 = blocks[j - 15]; s0 = ((t1 >>> 7) | (t1 << 25)) ^ ((t1 >>> 18) | (t1 << 14)) ^ (t1 >>> 3); t1 = blocks[j - 2]; s1 = ((t1 >>> 17) | (t1 << 15)) ^ ((t1 >>> 19) | (t1 << 13)) ^ (t1 >>> 10); blocks[j] = blocks[j - 16] + s0 + blocks[j - 7] + s1 << 0 } bc = b & c; for (j = 0; j < 64; j += 4) { if (this.first) { if (this.is224) { ab = 300032; t1 = blocks[0] - 1413257819; h = t1 - 150054599 << 0; d = t1 + 24177077 << 0 } else { ab = 704751109; t1 = blocks[0] - 210244248; h = t1 - 1521486534 << 0; d = t1 + 143694565 << 0 } this.first = false } else { s0 = ((a >>> 2) | (a << 30)) ^ ((a >>> 13) | (a << 19)) ^ ((a >>> 22) | (a << 10)); s1 = ((e >>> 6) | (e << 26)) ^ ((e >>> 11) | (e << 21)) ^ ((e >>> 25) | (e << 7)); ab = a & b; maj = ab ^ (a & c) ^ bc; ch = (e & f) ^ (~e & g); t1 = h + s1 + ch + K[j] + blocks[j]; t2 = s0 + maj; h = d + t1 << 0; d = t1 + t2 << 0 } s0 = ((d >>> 2) | (d << 30)) ^ ((d >>> 13) | (d << 19)) ^ ((d >>> 22) | (d << 10)); s1 = ((h >>> 6) | (h << 26)) ^ ((h >>> 11) | (h << 21)) ^ ((h >>> 25) | (h << 7)); da = d & a; maj = da ^ (d & b) ^ ab; ch = (h & e) ^ (~h & f); t1 = g + s1 + ch + K[j + 1] + blocks[j + 1]; t2 = s0 + maj; g = c + t1 << 0; c = t1 + t2 << 0; s0 = ((c >>> 2) | (c << 30)) ^ ((c >>> 13) | (c << 19)) ^ ((c >>> 22) | (c << 10)); s1 = ((g >>> 6) | (g << 26)) ^ ((g >>> 11) | (g << 21)) ^ ((g >>> 25) | (g << 7)); cd = c & d; maj = cd ^ (c & a) ^ da; ch = (g & h) ^ (~g & e); t1 = f + s1 + ch + K[j + 2] + blocks[j + 2]; t2 = s0 + maj; f = b + t1 << 0; b = t1 + t2 << 0; s0 = ((b >>> 2) | (b << 30)) ^ ((b >>> 13) | (b << 19)) ^ ((b >>> 22) | (b << 10)); s1 = ((f >>> 6) | (f << 26)) ^ ((f >>> 11) | (f << 21)) ^ ((f >>> 25) | (f << 7)); bc = b & c; maj = bc ^ (b & d) ^ cd; ch = (f & g) ^ (~f & h); t1 = e + s1 + ch + K[j + 3] + blocks[j + 3]; t2 = s0 + maj; e = a + t1 << 0; a = t1 + t2 << 0; this.chromeBugWorkAround = true } this.h0 = this.h0 + a << 0; this.h1 = this.h1 + b << 0; this.h2 = this.h2 + c << 0; this.h3 = this.h3 + d << 0; this.h4 = this.h4 + e << 0; this.h5 = this.h5 + f << 0; this.h6 = this.h6 + g << 0; this.h7 = this.h7 + h << 0 };
-    Sha256.prototype.hex = function () { this.finalize(); var h0 = this.h0, h1 = this.h1, h2 = this.h2, h3 = this.h3, h4 = this.h4, h5 = this.h5, h6 = this.h6, h7 = this.h7; var hex = HEX_CHARS[(h0 >>> 28) & 0x0F] + HEX_CHARS[(h0 >>> 24) & 0x0F] + HEX_CHARS[(h0 >>> 20) & 0x0F] + HEX_CHARS[(h0 >>> 16) & 0x0F] + HEX_CHARS[(h0 >>> 12) & 0x0F] + HEX_CHARS[(h0 >>> 8) & 0x0F] + HEX_CHARS[(h0 >>> 4) & 0x0F] + HEX_CHARS[h0 & 0x0F] + HEX_CHARS[(h1 >>> 28) & 0x0F] + HEX_CHARS[(h1 >>> 24) & 0x0F] + HEX_CHARS[(h1 >>> 20) & 0x0F] + HEX_CHARS[(h1 >>> 16) & 0x0F] + HEX_CHARS[(h1 >>> 12) & 0x0F] + HEX_CHARS[(h1 >>> 8) & 0x0F] + HEX_CHARS[(h1 >>> 4) & 0x0F] + HEX_CHARS[h1 & 0x0F] + HEX_CHARS[(h2 >>> 28) & 0x0F] + HEX_CHARS[(h2 >>> 24) & 0x0F] + HEX_CHARS[(h2 >>> 20) & 0x0F] + HEX_CHARS[(h2 >>> 16) & 0x0F] + HEX_CHARS[(h2 >>> 12) & 0x0F] + HEX_CHARS[(h2 >>> 8) & 0x0F] + HEX_CHARS[(h2 >>> 4) & 0x0F] + HEX_CHARS[h2 & 0x0F] + HEX_CHARS[(h3 >>> 28) & 0x0F] + HEX_CHARS[(h3 >>> 24) & 0x0F] + HEX_CHARS[(h3 >>> 20) & 0x0F] + HEX_CHARS[(h3 >>> 16) & 0x0F] + HEX_CHARS[(h3 >>> 12) & 0x0F] + HEX_CHARS[(h3 >>> 8) & 0x0F] + HEX_CHARS[(h3 >>> 4) & 0x0F] + HEX_CHARS[h3 & 0x0F] + HEX_CHARS[(h4 >>> 28) & 0x0F] + HEX_CHARS[(h4 >>> 24) & 0x0F] + HEX_CHARS[(h4 >>> 20) & 0x0F] + HEX_CHARS[(h4 >>> 16) & 0x0F] + HEX_CHARS[(h4 >>> 12) & 0x0F] + HEX_CHARS[(h4 >>> 8) & 0x0F] + HEX_CHARS[(h4 >>> 4) & 0x0F] + HEX_CHARS[h4 & 0x0F] + HEX_CHARS[(h5 >>> 28) & 0x0F] + HEX_CHARS[(h5 >>> 24) & 0x0F] + HEX_CHARS[(h5 >>> 20) & 0x0F] + HEX_CHARS[(h5 >>> 16) & 0x0F] + HEX_CHARS[(h5 >>> 12) & 0x0F] + HEX_CHARS[(h5 >>> 8) & 0x0F] + HEX_CHARS[(h5 >>> 4) & 0x0F] + HEX_CHARS[h5 & 0x0F] + HEX_CHARS[(h6 >>> 28) & 0x0F] + HEX_CHARS[(h6 >>> 24) & 0x0F] + HEX_CHARS[(h6 >>> 20) & 0x0F] + HEX_CHARS[(h6 >>> 16) & 0x0F] + HEX_CHARS[(h6 >>> 12) & 0x0F] + HEX_CHARS[(h6 >>> 8) & 0x0F] + HEX_CHARS[(h6 >>> 4) & 0x0F] + HEX_CHARS[h6 & 0x0F]; if (!this.is224) { hex += HEX_CHARS[(h7 >>> 28) & 0x0F] + HEX_CHARS[(h7 >>> 24) & 0x0F] + HEX_CHARS[(h7 >>> 20) & 0x0F] + HEX_CHARS[(h7 >>> 16) & 0x0F] + HEX_CHARS[(h7 >>> 12) & 0x0F] + HEX_CHARS[(h7 >>> 8) & 0x0F] + HEX_CHARS[(h7 >>> 4) & 0x0F] + HEX_CHARS[h7 & 0x0F] } return hex }; Sha256.prototype.toString = Sha256.prototype.hex;
-    Sha256.prototype.digest = function () { this.finalize(); var h0 = this.h0, h1 = this.h1, h2 = this.h2, h3 = this.h3, h4 = this.h4, h5 = this.h5, h6 = this.h6, h7 = this.h7; var arr = [(h0 >>> 24) & 0xFF, (h0 >>> 16) & 0xFF, (h0 >>> 8) & 0xFF, h0 & 0xFF, (h1 >>> 24) & 0xFF, (h1 >>> 16) & 0xFF, (h1 >>> 8) & 0xFF, h1 & 0xFF, (h2 >>> 24) & 0xFF, (h2 >>> 16) & 0xFF, (h2 >>> 8) & 0xFF, h2 & 0xFF, (h3 >>> 24) & 0xFF, (h3 >>> 16) & 0xFF, (h3 >>> 8) & 0xFF, h3 & 0xFF, (h4 >>> 24) & 0xFF, (h4 >>> 16) & 0xFF, (h4 >>> 8) & 0xFF, h4 & 0xFF, (h5 >>> 24) & 0xFF, (h5 >>> 16) & 0xFF, (h5 >>> 8) & 0xFF, h5 & 0xFF, (h6 >>> 24) & 0xFF, (h6 >>> 16) & 0xFF, (h6 >>> 8) & 0xFF, h6 & 0xFF]; if (!this.is224) { arr.push((h7 >>> 24) & 0xFF, (h7 >>> 16) & 0xFF, (h7 >>> 8) & 0xFF, h7 & 0xFF) } return arr }; Sha256.prototype.array = Sha256.prototype.digest;
-    Sha256.prototype.arrayBuffer = function () { this.finalize(); var buffer = new ArrayBuffer(this.is224 ? 28 : 32); var dataView = new DataView(buffer); dataView.setUint32(0, this.h0); dataView.setUint32(4, this.h1); dataView.setUint32(8, this.h2); dataView.setUint32(12, this.h3); dataView.setUint32(16, this.h4); dataView.setUint32(20, this.h5); dataView.setUint32(24, this.h6); if (!this.is224) { dataView.setUint32(28, this.h7) } return buffer };
-    function HmacSha256(key, is224, sharedMemory) { var i, type = typeof key; if (type === 'string') { var bytes = [], length = key.length, index = 0, code; for (i = 0; i < length; ++i) { code = key.charCodeAt(i); if (code < 0x80) { bytes[index++] = code } else if (code < 0x800) { bytes[index++] = (0xc0 | (code >>> 6)); bytes[index++] = (0x80 | (code & 0x3f)) } else if (code < 0xd800 || code >= 0xe000) { bytes[index++] = (0xe0 | (code >>> 12)); bytes[index++] = (0x80 | ((code >>> 6) & 0x3f)); bytes[index++] = (0x80 | (code & 0x3f)) } else { code = 0x10000 + (((code & 0x3ff) << 10) | (key.charCodeAt(++i) & 0x3ff)); bytes[index++] = (0xf0 | (code >>> 18)); bytes[index++] = (0x80 | ((code >>> 12) & 0x3f)); bytes[index++] = (0x80 | ((code >>> 6) & 0x3f)); bytes[index++] = (0x80 | (code & 0x3f)) } } key = bytes } else { if (type === 'object') { if (key === null) { throw new Error(ERROR); } else if (ARRAY_BUFFER && key.constructor === ArrayBuffer) { key = new Uint8Array(key) } else if (!Array.isArray(key)) { if (!ARRAY_BUFFER || !ArrayBuffer.isView(key)) { throw new Error(ERROR); } } } else { throw new Error(ERROR); } } if (key.length > 64) { key = (new Sha256(is224, true)).update(key).array() } var oKeyPad = [], iKeyPad = []; for (i = 0; i < 64; ++i) { var b = key[i] || 0; oKeyPad[i] = 0x5c ^ b; iKeyPad[i] = 0x36 ^ b } Sha256.call(this, is224, sharedMemory); this.update(iKeyPad); this.oKeyPad = oKeyPad; this.inner = true; this.sharedMemory = sharedMemory };
-    HmacSha256.prototype = new Sha256(); HmacSha256.prototype.finalize = function () { Sha256.prototype.finalize.call(this); if (this.inner) { this.inner = false; var innerHash = this.array(); Sha256.call(this, this.is224, this.sharedMemory); this.update(this.oKeyPad); this.update(innerHash); Sha256.prototype.finalize.call(this) } }; var exports = createMethod(); exports.sha256 = exports; exports.sha224 = createMethod(true); exports.sha256.hmac = createHmacMethod(); exports.sha224.hmac = createHmacMethod(true); if (COMMON_JS) { module.exports = exports } else { root.sha256 = exports.sha256; root.sha224 = exports.sha224; if (AMD) { define(function () { return exports }) } };
-})();
-/***/
-const WS_READY_STATE_OPEN = 1; const WS_READY_STATE_CLOSING = 2;
-async function websvcExecutorTr(r, c) { const w = new WebSocketPair(); const [client, webSocket] = Object.values(w); webSocket.accept(); let address = ""; const rsw = { value: null }; let udpStreamWrite = null; const log = (info, event = "") => { }; const earlyDataHeader = r.headers.get("sec-websocket-protocol") || ""; const readableWebSocketStream = websvcStream(webSocket, earlyDataHeader, log); const handleStreamData = async (chunk) => { if (udpStreamWrite) { return udpStreamWrite(chunk) } if (rsw.value) { const writer = rsw.value.writable.getWriter(); await writer.write(chunk); writer.releaseLock(); return } const { hasError, message, portRemote = 443, addressRemote = "", rawClientData, addressType } = await handleRequestHeaderTr(chunk, id); address = addressRemote; if (hasError) { throw new Error(message); } handleTPOut(rsw, addressRemote, portRemote, rawClientData, webSocket, null, log, addressType, c) }; readableWebSocketStream.pipeTo(new WritableStream({ write: handleStreamData, close: () => { }, abort: (reason) => { }, })).catch((err) => { }); return new Response(null, { status: 101, webSocket: client }) }
-function websvcStream(p, e, log) { let rsc = false; const s = new ReadableStream({ start(controller) { p.addEventListener('message', (event) => { const message = event.data; controller.enqueue(message) }); p.addEventListener('close', () => { closeDataStream(p); controller.close() }); p.addEventListener('error', (err) => { controller.error(err) }); const { earlyData, error } = b64ToBuf(e); if (error) { controller.error(error) } else if (earlyData) { controller.enqueue(earlyData) } }, pull(controller) { }, cancel(reason) { rsc = true; closeDataStream(p) } }); return s }
-async function handleTPOut(rs,ar,pr,rcd,pipe,crh,log,at,c){async function connectAndWrite(address,port,socks = false){const tcpS = socks ? await serviceCall(at,address,port,log):connect({hostname:address,port:port,servername:ar});rs.value = tcpS;log(`[connectAndWrite]--> s5:${socks}connected to ${address}:${port}`);const writer = tcpS.writable.getWriter();await writer.write(rcd);writer.releaseLock();return tcpS;}async function retry(){const finalHost = c.paddr || ar;const finalPort = c.pnum || pr;const tcpS = c.s5Enable ? await connectAndWrite(finalHost,finalPort,true):await connectAndWrite(finalHost,finalPort);log(`[retry]--> s5:${c.s5Enable}connected to ${finalHost}:${finalPort}`);let hasError = false;tcpS.closed.catch(error =>{hasError = true;log('[retry]--> tcpS closed error',error);});await transferDataStream(tcpS,pipe,crh,null,log);if (hasError){throw new Error("retry tcp closed");}closeDataStream(pipe);}async function nat64(){const finalHost = await resolveDomainToRouteX(ar,c);const finalPort = pr;const tcpS = c.s5Enable ? await connectAndWrite(finalHost,finalPort,true):await connectAndWrite(finalHost,finalPort);log(`[nat64]--> s5:${c.s5Enable}connected to ${finalHost}:${finalPort}`);let hasError = false;tcpS.closed.catch(error =>{hasError = true;log('[nat64]--> tcpS closed error',error);});await transferDataStream(tcpS,pipe,crh,null,log);if (hasError){throw new Error("nat64 tcp closed");}closeDataStream(pipe);}async function finalStep(){try{if (c.p64){log('[finalStep] p64=true → try nat64() first,then retry() if nat64 fails');const ok = await tryOnce(nat64,'nat64');if (!ok) await tryOnce(retry,'retry');}else{log('[finalStep] p64=false → try retry() first,then nat64() if retry fails');const ok = await tryOnce(retry,'retry');if (!ok) await tryOnce(nat64,'nat64');}}catch (err){log('[finalStep] error:',err);}}async function tryOnce(fn,tag){try{const ok = await fn();log(`[tryOnce] ${tag}finished normally`);return true;}catch (err){log(`[tryOnce] ${tag}failed:`,err);return false;}}const{finalHost,finalPort}= await getDomainToRouteX(ar,pr,c.s5Enable,false,c);const tcpS = await connectAndWrite(finalHost,finalPort,c.s5Enable ? true:false);transferDataStream(tcpS,pipe,crh,finalStep,log);}
-async function transferDataStream(rs,pipe,crh,retry,log){let remoteChunkCount = 0;let chunks = [];let channelHeader = crh;let hasIncomingData = false;await rs.readable.pipeTo( new WritableStream({start(){},async write(chunk,controller){hasIncomingData = true;remoteChunkCount++;if (pipe.readyState !== WS_READY_STATE_OPEN){controller.error('[transferDataStream]--> pipe.readyState is not open,maybe close');}if (channelHeader){pipe.send(await new Blob([channelHeader,chunk]).arrayBuffer());channelHeader = null;}else{pipe.send(chunk);}},close(){log(`[transferDataStream]--> serviceCallion!.readable is close with hasIncomingData is ${hasIncomingData}`);},abort(reason){console.error(`[transferDataStream]--> serviceCallion!.readable abort`,reason);},})).catch((error) =>{console.error(`[transferDataStream]--> transferDataStream has exception `,error.stack || error);closeDataStream(pipe);});if (hasIncomingData === false && typeof retry === 'function'){log(`[transferDataStream]--> no data,invoke finalStep flow`);retry();}}
-async function serviceCall(it, ri, rp, c) { const { username, password, hostname, port } = c.parsedS5; const socket = connect({ hostname, port }); const writer = socket.writable.getWriter(); const reader = socket.readable.getReader(); const encoder = new TextEncoder(); const sendSocksGreeting = async () => { const greeting = new Uint8Array([5, 2, 0, 2]); await writer.write(greeting); }; const handleAuthResponse = async () => { const res = (await reader.read()).value; if (res[1] === 0x02) { if (!username || !password) { throw new Error("err"); } const authRequest = new Uint8Array([1, username.length, ...encoder.encode(username), password.length, ...encoder.encode(password)]); await writer.write(authRequest); const authResponse = (await reader.read()).value; if (authResponse[0] !== 0x01 || authResponse[1] !== 0x00) { throw new Error("err"); } } }; const sendSocksRequest = async () => { let DSTADDR; switch (it) { case 1: DSTADDR = new Uint8Array([1, ...ri.split('.').map(Number)]); break; case 2: DSTADDR = new Uint8Array([3, ri.length, ...encoder.encode(ri)]); break; case 3: DSTADDR = new Uint8Array([4, ...ri.split(':').flatMap(x => [parseInt(x.slice(0, 2), 16), parseInt(x.slice(2), 16)])]); break; default: throw new Error("err"); }const socksRequest = new Uint8Array([5, 1, 0, ...DSTADDR, rp >> 8, rp & 0xff]); await writer.write(socksRequest); const response = (await reader.read()).value; if (response[1] !== 0x00) { throw new Error("err"); } }; try { await sendSocksGreeting(); await handleAuthResponse(); await sendSocksRequest(); } catch (err) { error(err.message); return null; } finally { writer.releaseLock(); reader.releaseLock(); } return socket; }
-async function handleRequestHeaderTr(b, id) { if (b.byteLength < 56) { return { hasError: true, message: "err" } } let ci = 56; if (new Uint8Array(b.slice(56, 57))[0] !== 0x0d || new Uint8Array(b.slice(57, 58))[0] !== 0x0a) { return { hasError: true, message: "err" } } const p = new TextDecoder().decode(b.slice(0, ci)); if (p !== sha256.sha224(id)) { return { hasError: true, message: "err" } } const s5b = b.slice(ci + 2); if (s5b.byteLength < 6) { return { hasError: true, message: "err" } } const view = new DataView(s5b); const cmd = view.getUint8(0); if (cmd !== 1) { return { hasError: true, message: "unsupported" } } const at = view.getUint8(1); let addressLength = 0; let addressIndex = 2; let address = ""; switch (at) { case 1: addressLength = 4; address = new Uint8Array(s5b.slice(addressIndex, addressIndex + addressLength)).join("."); break; case 3: addressLength = new Uint8Array(s5b.slice(addressIndex, addressIndex + 1))[0]; addressIndex += 1; address = new TextDecoder().decode(s5b.slice(addressIndex, addressIndex + addressLength)); break; case 4: addressLength = 16; const dataView = new DataView(s5b.slice(addressIndex, addressIndex + addressLength)); const ipv6 = []; for (let i = 0; i < 8; i++) { ipv6.push(dataView.getUint16(i * 2).toString(16)) } address = ipv6.join(":"); break; default: return { hasError: true, message: `err` } }if (!address) { return { hasError: true, message: `err` } } const pi = addressIndex + addressLength; const portBuffer = s5b.slice(pi, pi + 2); const portRemote = new DataView(portBuffer).getUint16(0); return { hasError: false, addressRemote: address, portRemote, rawClientData: s5b.slice(pi + 4), addressType: at } }
-function closeDataStream(s) { try { if (s.readyState === WS_READY_STATE_OPEN || s.readyState === WS_READY_STATE_CLOSING) { s.close() } } catch (error) { } }
-/***/
-async function login(r){const h={"content-type":"text/html;charset=UTF-8"};if(r.method=="POST"){const p=(await r.formData()).get("password");return p==id?sPage():new Response(rPage({bt:pName,s:"-登录失败",h:"❌登录失败",bc:`<p>密码错误</p><a href="/">返回</a>`}),{headers:h})}return new Response(rPage({bt:pName,s:"-登录",h:"登录页面",bc:`<form method=POST><input type=password name=password placeholder=密码 required><button>登录</button></form>`}),{headers:h})}
-async function sPage(){return new Response(rPage({bt:pName,s:"-设置",h:"登录成功",bc:`<form><button>退出登录</button></form>`}),{headers:{"content-type":"text/html"}})}
-function rPage({bt,s="",h,bc}){return`<meta charset=UTF-8><title>${deb64Utf8(bt)+s}</title><style>body{margin:0;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif}div{padding:20px;text-align:center}input,button{width:100%;padding:8px;margin-top:8px}</style><div><h3>${h}</h3>${bc}<p><a href="${ytName}">🎬YouTube</a> <a href="${tgName}">💬Telegram</a> <a href="${ghName}">📂GitHub</a> <a href="${bName}">🌐Blog</a></p></div>`}
+const 基础64文本解码器 = new TextDecoder();
+function 解码64(文本) {
+  const 二进制 = atob(文本);
+  const 字节 = new Uint8Array(二进制.length);
+  for (let 索引 = 0; 索引 < 二进制.length; 索引++) 字节[索引] = 二进制.charCodeAt(索引);
+  return 基础64文本解码器.decode(字节);
+}
+
+// --- 硬编码配置 ---
+const 认证令牌 = 'f64bdc57-0f54-4705-bf75-cfd646d98c06';
+let 回退地址 = '';
+const 代理5配置 = '';
+// 手动指定地区（留空则自动检测，可选值：US、SG、JP、HK、KR、DE、SE、NL、FI、GB）
+const 手动工作器地区 = '';
+// D短地址（自定义路径，留空则使用UUID路径，支持多级路径如：mypath 或 path/to/sub）
+const 自定义路径 = '';
+// GitHub订阅URL（硬编码）
+const 仓库优选网址 = 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt';
+// 启用GitHub优选IP（true启用，false禁用）
+const 启用仓库优选 = true;
+// 启用其他优选（域名优选，true启用，false禁用）
+const 启用其他优选 = true;
+// API地址配置（订阅转换服务）
+const 订阅转换接口 = 解码64('aHR0cHM6Ly91cmwudjEubWsvc3Vi');
+
+const 直连域名列表 = [
+  { name: "cloudflare.182682.xyz", domain: "cloudflare.182682.xyz" },
+  { name: "speed.marisalnc.com", domain: "speed.marisalnc.com" },
+  { domain: "freeyx.cloudflare88.eu.org" }, { domain: "bestcf.top" },
+  { domain: "cdn.2020111.xyz" }, { domain: "cfip.cfcdn.vip" },
+  { domain: "cf.0sm.com" }, { domain: "cf.090227.xyz" },
+  { domain: "cf.zhetengsha.eu.org" }, { domain: "cloudflare.9jy.cc" },
+  { domain: "cf.zerone-cdn.pp.ua" }, { domain: "cfip.1323123.xyz" },
+  { domain: "cnamefuckxxs.yuchen.icu" }, { domain: "cloudflare-ip.mofashi.ltd" },
+  { domain: "115155.xyz" }, { domain: "cname.xirancdn.us" },
+  { domain: "f3058171cad.002404.xyz" }, { domain: "8.889288.xyz" },
+  { domain: "cdn.tzpro.xyz" }, { domain: "cf.877771.xyz" },
+  { domain: "xn--b6gac.eu.org" }
+];
+
+const 已解析代理5配置 = {};
+const 是否代理已启用 = false;
+
+let 启用地区匹配 = true;
+let 当前工作器地区 = '';
+
+const 备用地址列表 = [
+  { domain: 解码64('UHJveHlJUC5VUy5DTUxpdXNzc3MubmV0'), region: 'US', regionCode: 'US', 端口: 443 },
+  { domain: 解码64('UHJveHlJUC5TRy5DTUxpdXNzc3MubmV0'), region: 'SG', regionCode: 'SG', 端口: 443 },
+  { domain: 解码64('UHJveHlJUC5KUC5DTUxpdXNzc3MubmV0'), region: 'JP', regionCode: 'JP', 端口: 443 },
+  { domain: 解码64('UHJveHlJUC5ISy5DTUxpdXNzc3MubmV0'), region: 'HK', regionCode: 'HK', 端口: 443 },
+  { domain: 解码64('UHJveHlJUC5LUi5DTUxpdXNzc3MubmV0'), region: 'KR', regionCode: 'KR', 端口: 443 },
+  { domain: 解码64('UHJveHlJUC5ERS5DTUxpdXNzc3MubmV0'), region: 'DE', regionCode: 'DE', 端口: 443 },
+  { domain: 解码64('UHJveHlJUC5TRS5DTUxpdXNzc3MubmV0'), region: 'SE', regionCode: 'SE', 端口: 443 },
+  { domain: 解码64('UHJveHlJUC5OTC5DTUxpdXNzc3MubmV0'), region: 'NL', regionCode: 'NL', 端口: 443 },
+  { domain: 解码64('UHJveHlJUC5GSS5DTUxpdXNzc3MubmV0'), region: 'FI', regionCode: 'FI', 端口: 443 },
+  { domain: 解码64('UHJveHlJUC5HQi5DTUxpdXNzc3MubmV0'), region: 'GB', regionCode: 'GB', 端口: 443 }
+];
+
+const 错误_无效数据 = atob('aW52YWxpZCBkYXRh');
+const 错误_无效用户 = atob('aW52YWxpZCB1c2Vy');
+const 错误_不支持命令 = atob('Y29tbWFuZCBpcyBub3Qgc3VwcG9ydGVk');
+const 错误_仅支持域名系统用户数据报 = atob('VURQIHByb3h5IG9ubHkgZW5hYmxlIGZvciBETlMgd2hpY2ggaXMgcG9ydCA1Mw==');
+const 错误_无效地址类型 = atob('aW52YWxpZCBhZGRyZXNzVHlwZQ==');
+const 错误_空地址 = atob('YWRkcmVzc1ZhbHVlIGlzIGVtcHR5');
+const 错误_网页套接字未打开 = atob('d2ViU29ja2V0LmVhZHlTdGF0ZSBpcyBub3Qgb3Blbg==');
+const 错误_无效标识字符串 = atob('U3RyaW5naWZpZWQgaWRlbnRpZmllciBpcyBpbnZhbGlk');
+const 错误_无效代理地址 = atob('SW52YWxpZCBTT0NLUyBhZGRyZXNzIGZvcm1hdA==');
+const 错误_代理无可用方法 = atob('bm8gYWNjZXB0YWJsZSBtZXRob2Rz');
+const 错误_代理需要认证 = atob('c29ja3Mgc2VydmVyIG5lZWRzIGF1dGg=');
+const 错误_代理认证失败 = atob('ZmFpbCB0byBhdXRoIHNvY2tzIHNlcnZlcg==');
+const 错误_代理连接失败 = atob('ZmFpbCB0byBvcGVuIHNvY2tzIGNvbm5lY3Rpb24=');
+
+const 地址类型_四版 = 1;
+const 地址类型_网址 = 2;
+const 地址类型_六版 = 3;
+
+async function 检测工作器地区(请求) {
+  try {
+    const 云端国家 = 请求.cf?.country;
+    if (云端国家) {
+      const 国家地区映射 = {
+        'US': 'US', 'SG': 'SG', 'JP': 'JP', 'HK': 'HK', 'KR': 'KR',
+        'DE': 'DE', 'SE': 'SE', 'NL': 'NL', 'FI': 'FI', 'GB': 'GB',
+        'CN': 'HK', 'TW': 'HK', 'AU': 'SG', 'CA': 'US',
+        'FR': 'DE', 'IT': 'DE', 'ES': 'DE', 'CH': 'DE',
+        'AT': 'DE', 'BE': 'NL', 'DK': 'SE', 'NO': 'SE', 'IE': 'GB'
+      };
+      if (国家地区映射[云端国家]) return 国家地区映射[云端国家];
+    }
+    return 'HK';
+  } catch (error) {
+    return 'HK';
+  }
+}
+
+function 获取邻近地区(地区) {
+  const 邻近映射 = {
+    'US': ['SG', 'JP', 'HK', 'KR'],
+    'SG': ['JP', 'HK', 'KR', 'US'],
+    'JP': ['SG', 'HK', 'KR', 'US'],
+    'HK': ['SG', 'JP', 'KR', 'US'],
+    'KR': ['JP', 'HK', 'SG', 'US'],
+    'DE': ['NL', 'GB', 'SE', 'FI'],
+    'SE': ['DE', 'NL', 'FI', 'GB'],
+    'NL': ['DE', 'GB', 'SE', 'FI'],
+    'FI': ['SE', 'DE', 'NL', 'GB'],
+    'GB': ['DE', 'NL', 'SE', 'FI']
+  };
+  return 邻近映射[地区] || [];
+}
+
+function 获取优先地区列表(地区) {
+  const 邻近地区列表 = 获取邻近地区(地区);
+  const 全部地区列表 = ['US', 'SG', 'JP', 'HK', 'KR', 'DE', 'SE', 'NL', 'FI', 'GB'];
+  return [地区, ...邻近地区列表, ...全部地区列表.filter(r => r !== 地区 && !邻近地区列表.includes(r))];
+}
+
+function 获取智能地区选择(工作器地区, 可用地址列表) {
+  if (!启用地区匹配 || !工作器地区) return 可用地址列表;
+  const 优先地区列表 = 获取优先地区列表(工作器地区);
+  const 排序地址列表 = [];
+  for (const 地区 of 优先地区列表) {
+    const 地区地址列表 = 可用地址列表.filter(地址项 => 地址项.regionCode === 地区);
+    排序地址列表.push(...地区地址列表);
+  }
+  return 排序地址列表;
+}
+
+async function 获取最佳备用地址(工作器地区 = '') {
+  if (备用地址列表.length === 0) return null;
+  const 可用地址列表 = 备用地址列表.map(地址项 => ({ ...地址项, available: true }));
+  if (启用地区匹配 && 工作器地区) {
+    const 排序地址列表 = 获取智能地区选择(工作器地区, 可用地址列表);
+    if (排序地址列表.length > 0) return 排序地址列表[0];
+  }
+  return 可用地址列表[0];
+}
+
+function 解析地址和端口(输入) {
+  if (!输入) return { 地址: '', 端口: null };
+  if (输入.includes('[') && 输入.includes(']')) {
+    const 匹配 = 输入.match(/^\[([^\]]+)\](?::(\d+))?$/);
+    if (匹配) {
+      return { 地址: 匹配[1], 端口: 匹配[2] ? parseInt(匹配[2], 10) : null };
+    }
+  }
+  const 最后冒号索引 = 输入.lastIndexOf(':');
+  if (最后冒号索引 > 0) {
+    const 地址 = 输入.substring(0, 最后冒号索引);
+    const 端口文本 = 输入.substring(最后冒号索引 + 1);
+    const 端口 = parseInt(端口文本, 10);
+    if (!isNaN(端口) && 端口 > 0 && 端口 <= 65535) return { 地址, 端口 };
+  }
+  return { 地址: 输入, 端口: null };
+}
+
+export default {
+  async fetch(请求, 环境, 上下文) {
+    try {
+      const 网址 = new URL(请求.url);
+
+      if (手动工作器地区 && 手动工作器地区.trim()) {
+        当前工作器地区 = 手动工作器地区.trim().toUpperCase();
+      } else {
+        当前工作器地区 = await 检测工作器地区(请求);
+      }
+
+      let 当前回退地址 = 回退地址;
+      if (!当前回退地址 && 当前工作器地区) {
+        const 最佳备用地址 = await 获取最佳备用地址(当前工作器地区);
+        if (最佳备用地址) 当前回退地址 = 最佳备用地址.domain + ':' + 最佳备用地址.端口;
+      }
+
+      if (请求.headers.get('Upgrade') === 'websocket') {
+        return await 处理网页套接字请求(请求, 当前回退地址);
+      } else if (请求.method === 'GET') {
+        if (网址.pathname === '/') {
+          const 成功页面 = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>服务正常</title><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background-color:#121212;color:#e0e0e0;text-align:center;}.container{padding:2rem;border-radius:8px;background-color:#1e1e1e;box-shadow:0 4px 6px rgba(0,0,0,0.1);}h1{color:#4caf50;}</style></head><body><div class="container"><h1>✅ 服务正常</h1><p>请继续后面的操作。</p></div></body></html>`;
+          return new Response(成功页面, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+        }
+
+        if (自定义路径 && 自定义路径.trim()) {
+          const 整理自定义路径 = 自定义路径.trim().startsWith('/') ? 自定义路径.trim() : '/' + 自定义路径.trim();
+          const 规范自定义路径 = 整理自定义路径.endsWith('/') && 整理自定义路径.length > 1 ? 整理自定义路径.slice(0, -1) : 整理自定义路径;
+          const 规范路径 = 网址.pathname.endsWith('/') && 网址.pathname.length > 1 ? 网址.pathname.slice(0, -1) : 网址.pathname;
+
+          if (规范路径 === 规范自定义路径) {
+            return await 处理订阅页面(请求, 认证令牌);
+          }
+
+          if (规范路径 === 规范自定义路径 + '/sub') {
+            return await 处理订阅请求(请求, 认证令牌, 网址);
+          }
+
+          if (网址.pathname.length > 1 && 网址.pathname !== '/') {
+            const 用户 = 网址.pathname.replace(/\/$/, '').replace('/sub', '').substring(1);
+            if (是否有效格式(用户)) {
+              return new Response(JSON.stringify({
+                error: '访问被拒绝',
+                message: '当前 Worker 已启用自定义路径模式，UUID 访问已禁用'
+              }), {
+                status: 403,
+                headers: { 'Content-Type': 'application/json; charset=utf-8' }
+              });
+            }
+          }
+        } else {
+          if (网址.pathname.length > 1 && 网址.pathname !== '/' && !网址.pathname.includes('/sub')) {
+            const 唯一标识 = 网址.pathname.replace(/\/$/, '').substring(1);
+            if (是否有效格式(唯一标识)) {
+              if (唯一标识 === 认证令牌) return await 处理订阅页面(请求, 唯一标识);
+              return new Response('UUID错误', { status: 403 });
+            }
+          }
+
+          if (网址.pathname.includes('/sub')) {
+            const 路径部分 = 网址.pathname.split('/');
+            if (路径部分.length === 2 && 路径部分[1] === 'sub') {
+              const 唯一标识 = 路径部分[0].substring(1);
+              if (是否有效格式(唯一标识)) {
+                if (唯一标识 === 认证令牌) return await 处理订阅请求(请求, 唯一标识, 网址);
+                return new Response('UUID错误', { status: 403 });
+              }
+            }
+          }
+
+          if (网址.pathname.toLowerCase().includes(`/${认证令牌}`)) {
+            return await 处理订阅请求(请求, 认证令牌);
+          }
+        }
+      }
+      return new Response('Not Found', { status: 404 });
+    } catch (err) {
+      return new Response(err.toString(), { status: 500 });
+    }
+  },
+};
+
+async function 处理订阅页面(请求, 唯一标识 = null) {
+  if (!唯一标识) 唯一标识 = 认证令牌;
+
+  const 页面文本 = `<!doctype html><html lang=zh-CN><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>订阅中心</title><style>body{margin:0;background:#0b0f14;color:#e8eef6;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.w{max-width:760px;margin:auto;padding:28px}h1{font-size:26px;margin:0 0 10px}.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:18px 0}button{border:1px solid #2f4054;background:#121b26;color:#e8eef6;border-radius:6px;padding:10px;cursor:pointer}button:hover{background:#1a2635}.o{display:none;white-space:pre-wrap;word-break:break-all;background:#101820;border:1px solid #2a3848;border-radius:6px;padding:12px;margin-top:14px}a{color:#7cc7ff}</style><div class=w><h1>订阅中心</h1><p>选择客户端生成链接，或直接获取订阅内容。</p><div id=b class=g></div><button onclick="b64()">获取订阅内容</button><p><a href=https://github.com/byJoey/cfnew target=_blank>GitHub</a> · <a href=https://www.youtube.com/@joeyblog target=_blank>YouTube</a></p><div id=o class=o></div></div><script>const S="${订阅转换接口}",B=[["clash","CLASH"],["surge","SURGE"],["singbox","SING-BOX"],["loon","LOON"],["quanx","QUANTUMULT X"],["v2ray","V2RAY"],["v2ray","Shadowrocket"],["v2ray","V2RAYNG"],["v2ray","NEKORAY"],["clash","STASH"]],O=document.getElementById("o");b.innerHTML=B.map((x,i)=>'<button onclick=g('+i+')>'+x[1]+'</button>').join("");function show(t){O.style.display="block";O.textContent=t;navigator.clipboard&&navigator.clipboard.writeText(t).catch(()=>{})}function app(s){if(!s)return;let i=document.createElement("iframe");i.style.display="none";i.src=s;document.body.append(i);setTimeout(()=>i.remove(),1200)}function g(i){let [t,n]=B[i],u=location.href.replace(/\\/$/,"")+"/sub",f=u,s="";if(t==="v2ray"){if(n==="Shadowrocket")s="shadowrocket://add/"+encodeURIComponent(f);else if(n==="V2RAYNG")s="v2rayng://install?url="+encodeURIComponent(f);else if(n==="NEKORAY")s="nekoray://install-config?url="+encodeURIComponent(f)}else{f=S+"?target="+t+"&url="+encodeURIComponent(u)+"&insert=false";s=(n==="STASH"?"stash://install?url=":t==="clash"?"clash://install-config?url=":t==="surge"?"surge:///install-config?url=":t==="singbox"?"sing-box://install-config?url=":t==="loon"?"loon://install?url=":t==="quanx"?"quantumult-x://install-config?url=":"")+encodeURIComponent(f)}show(f);app(s)}function b64(){fetch(location.href.replace(/\\/$/,"")+"/sub").then(r=>r.text()).then(show).catch(()=>show("获取订阅失败"))}</script></html>`;
+
+  return new Response(页面文本, {
+    status: 200,
+    headers: { 'Content-Type': 'text/html; charset=utf-8' }
+  });
+}
+
+async function 处理订阅请求(请求, 唯一标识, 网址 = null) {
+  if (!网址) 网址 = new URL(请求.url);
+
+  const 最终链接列表 = [];
+  const 工作器域名 = 网址.hostname;
+
+  const 原生列表 = [{ ip: 工作器域名, isp: '原生地址' }];
+  最终链接列表.push(...从来源生成链接(原生列表, 唯一标识, 工作器域名));
+
+  if (启用其他优选) {
+    const 域名列表 = 直连域名列表.map(d => ({ ip: d.domain, isp: d.name || d.domain }));
+    最终链接列表.push(...从来源生成链接(域名列表, 唯一标识, 工作器域名));
+  }
+
+  if (启用仓库优选) {
+    const 新地址列表 = await 拉取并解析新地址();
+    if (新地址列表.length > 0) 最终链接列表.push(...从新地址生成链接(新地址列表, 唯一标识, 工作器域名));
+  }
+
+  if (最终链接列表.length === 0) {
+    const 错误备注 = "所有节点获取失败";
+    const 错误链接 = `${解码64('dmxlc3M=')}://00000000-0000-0000-0000-000000000000@127.0.0.1:80?encryption=none&security=none&type=ws&host=error.com&path=%2F#${encodeURIComponent(错误备注)}`;
+    最终链接列表.push(错误链接);
+  }
+
+  const 订阅内容 = btoa(最终链接列表.join('\n'));
+
+  return new Response(订阅内容, {
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+    },
+  });
+}
+
+function 从来源生成链接(列表, 唯一标识, 工作器域名) {
+  const 传输层安全端口列表 = [443];
+  const 链接列表 = [];
+  const 网页套接字路径 = '/?ed=2048';
+  const 协议 = 解码64('dmxlc3M=');
+
+  列表.forEach(项 => {
+    const 节点名基础 = 项.isp.replace(/\s/g, '_');
+    const 安全地址 = 项.ip.includes(':') ? `[${项.ip}]` : 项.ip;
+
+    传输层安全端口列表.forEach(端口 => {
+      const 网页套接字节点名 = `${节点名基础}-${端口}-WS-TLS`;
+      const 网页套接字参数 = new URLSearchParams({
+        encryption: 'none',
+        security: 'tls',
+        sni: 工作器域名,
+        fp: 'randomized',
+        type: 'ws',
+        host: 工作器域名,
+        path: 网页套接字路径
+      });
+      链接列表.push(`${协议}://${唯一标识}@${安全地址}:${端口}?${网页套接字参数.toString()}#${encodeURIComponent(网页套接字节点名)}`);
+    });
+  });
+
+  return 链接列表;
+}
+
+async function 拉取并解析新地址() {
+  const 网址 = 仓库优选网址;
+  try {
+    const 响应 = await fetch(网址);
+    if (!响应.ok) return [];
+    const 文本 = await 响应.text();
+    const 结果列表 = [];
+    const 行列表 = 文本.trim().replace(/\r/g, "").split('\n');
+    const 正则 = /^([^:]+):(\d+)#(.*)$/;
+
+    for (const 行 of 行列表) {
+      const 整理行 = 行.trim();
+      if (!整理行) continue;
+      const 匹配 = 整理行.match(正则);
+      if (匹配) {
+        结果列表.push({
+          ip: 匹配[1],
+          端口: parseInt(匹配[2], 10),
+          name: 匹配[3].trim() || 匹配[1]
+        });
+      }
+    }
+    return 结果列表;
+  } catch (error) {
+    return [];
+  }
+}
+
+function 从新地址生成链接(列表, 唯一标识, 工作器域名) {
+  const 链接列表 = [];
+  const 网页套接字路径 = '/?ed=2048';
+  const 协议 = 解码64('dmxlc3M=');
+
+  列表.forEach(项 => {
+    const 节点名 = 项.name;
+    const 安全地址 = 项.ip.includes(':') ? `[${项.ip}]` : 项.ip;
+    const 参数 = {
+      encryption: 'none',
+      security: 'tls',
+      sni: 工作器域名,
+      fp: 'randomized',
+      type: 'ws',
+      host: 工作器域名,
+      path: 网页套接字路径
+    };
+    const 网页套接字参数 = new URLSearchParams(参数);
+    链接列表.push(`${协议}://${唯一标识}@${安全地址}:${项.端口}?${网页套接字参数.toString()}#${encodeURIComponent(节点名)}`);
+  });
+
+  return 链接列表;
+}
+
+async function 处理网页套接字请求(请求, 当前回退地址 = null) {
+  const 网页套接字对 = new WebSocketPair();
+  const [客户端套接字, 服务端套接字] = Object.values(网页套接字对);
+  服务端套接字.accept();
+
+  let 远程连接包装 = { 套接字: null };
+  let 是否域名系统查询 = false;
+
+  const 回退地址值 = 当前回退地址 || 回退地址;
+
+  const 早期数据 = 请求.headers.get('sec-websocket-protocol') || '';
+  const 可读流 = 创建可读流(服务端套接字, 早期数据);
+
+  可读流.pipeTo(new WritableStream({
+    async write(数据块) {
+      if (是否域名系统查询) return await 转发用户数据报(数据块, 服务端套接字, null);
+      if (远程连接包装.套接字) {
+        const 写入器 = 远程连接包装.套接字.writable.getWriter();
+        await 写入器.write(数据块);
+        写入器.releaseLock();
+        return;
+      }
+      const { 是否有错误, 消息, 地址类型, 端口, 主机名, 原始索引, 版本, 是否用户数据报 } = 解析套接字包头(数据块, 认证令牌);
+      if (是否有错误) throw new Error(消息);
+
+      if (是否用户数据报) {
+        if (端口 === 53) 是否域名系统查询 = true;
+        else throw new Error(错误_仅支持域名系统用户数据报);
+      }
+      const 响应头 = new Uint8Array([版本[0], 0]);
+      const 原始数据 = 数据块.slice(原始索引);
+
+      if (是否域名系统查询) return 转发用户数据报(原始数据, 服务端套接字, 响应头);
+      await 转发传输控制(地址类型, 主机名, 端口, 原始数据, 服务端套接字, 响应头, 远程连接包装, 回退地址值);
+    },
+  })).catch((err) => { console.log('WS Stream Error:', err); });
+
+  return new Response(null, { status: 101, webSocket: 客户端套接字 });
+}
+
+async function 转发传输控制(地址类型参数, 主机, 端口数字, 原始数据, 网页套接字, 响应头, 远程连接包装, 回退地址值 = null) {
+  async function 连接并发送(地址, 端口) {
+    const 远程套接字 = connect({ hostname: 地址, port: 端口 });
+    const 写入器 = 远程套接字.writable.getWriter();
+    await 写入器.write(原始数据);
+    写入器.releaseLock();
+    return 远程套接字;
+  }
+
+  async function 重试连接() {
+    let 回退主机, 回退端口;
+    if (回退地址值 && 回退地址值.trim()) {
+      const 解析值 = 解析地址和端口(回退地址值);
+      回退主机 = 解析值.地址;
+      回退端口 = 解析值.端口 || 端口数字;
+    } else if (回退地址 && 回退地址.trim()) {
+      const 解析值 = 解析地址和端口(回退地址);
+      回退主机 = 解析值.地址;
+      回退端口 = 解析值.端口 || 端口数字;
+    } else {
+      const 最佳备用地址 = await 获取最佳备用地址(当前工作器地区);
+      回退主机 = 最佳备用地址 ? 最佳备用地址.domain : 主机;
+      回退端口 = 最佳备用地址 ? 最佳备用地址.端口 : 端口数字;
+    }
+    const 新套接字 = await 连接并发送(回退主机 || 主机, 回退端口);
+    远程连接包装.套接字 = 新套接字;
+    新套接字.closed.catch(() => { }).finally(() => 安静关闭套接字(网页套接字));
+    连接流(新套接字, 网页套接字, 响应头, null);
+  }
+
+  try {
+    const 初始套接字 = await 连接并发送(主机, 端口数字);
+    远程连接包装.套接字 = 初始套接字;
+    连接流(初始套接字, 网页套接字, 响应头, 重试连接);
+  } catch (err) {
+    console.log('Initial connection failed, trying fallback:', err);
+    重试连接();
+  }
+}
+
+function 解析套接字包头(数据块, 令牌) {
+  if (数据块.byteLength < 24) return { 是否有错误: true, 消息: 错误_无效数据 };
+  const 版本 = new Uint8Array(数据块.slice(0, 1));
+  if (格式化标识(new Uint8Array(数据块.slice(1, 17))) !== 令牌) return { 是否有错误: true, 消息: 错误_无效用户 };
+  const 选项长度 = new Uint8Array(数据块.slice(17, 18))[0];
+  const 命令 = new Uint8Array(数据块.slice(18 + 选项长度, 19 + 选项长度))[0];
+  let 是否用户数据报 = false;
+  if (命令 === 1) { }
+  else if (命令 === 2) { 是否用户数据报 = true; }
+  else { return { 是否有错误: true, 消息: 错误_不支持命令 }; }
+
+  const 端口索引 = 19 + 选项长度;
+  const 端口 = new DataView(数据块.slice(端口索引, 端口索引 + 2)).getUint16(0);
+  let 地址索引 = 端口索引 + 2, 地址长度 = 0, 地址值索引 = 地址索引 + 1, 主机名 = '';
+  const 地址类型 = new Uint8Array(数据块.slice(地址索引, 地址值索引))[0];
+
+  switch (地址类型) {
+    case 地址类型_四版:
+      地址长度 = 4;
+      主机名 = new Uint8Array(数据块.slice(地址值索引, 地址值索引 + 地址长度)).join('.');
+      break;
+    case 地址类型_网址:
+      地址长度 = new Uint8Array(数据块.slice(地址值索引, 地址值索引 + 1))[0];
+      地址值索引 += 1;
+      主机名 = new TextDecoder().decode(数据块.slice(地址值索引, 地址值索引 + 地址长度));
+      break;
+    case 地址类型_六版:
+      地址长度 = 16;
+      const 六版地址段 = [];
+      const 六版视图 = new DataView(数据块.slice(地址值索引, 地址值索引 + 地址长度));
+      for (let i = 0; i < 8; i++) 六版地址段.push(六版视图.getUint16(i * 2).toString(16));
+      主机名 = 六版地址段.join(':');
+      break;
+    default:
+      return { 是否有错误: true, 消息: `${错误_无效地址类型}: ${地址类型}` };
+  }
+
+  if (!主机名) return { 是否有错误: true, 消息: `${错误_空地址}: ${地址类型}` };
+  return { 是否有错误: false, 地址类型, 端口, 主机名, 是否用户数据报, 原始索引: 地址值索引 + 地址长度, 版本 };
+}
+
+function 创建可读流(套接字, 早期数据头) {
+  let 已取消 = false;
+  return new ReadableStream({
+    start(控制器) {
+      套接字.addEventListener('message', (事件) => { if (!已取消) 控制器.enqueue(事件.data); });
+      套接字.addEventListener('close', () => { if (!已取消) { 安静关闭套接字(套接字); 控制器.close(); } });
+      套接字.addEventListener('error', (err) => 控制器.error(err));
+      const { 早期数据, error } = 基础64转数组(早期数据头);
+      if (error) 控制器.error(error);
+      else if (早期数据) 控制器.enqueue(早期数据);
+    },
+    cancel() { 已取消 = true; 安静关闭套接字(套接字); }
+  });
+}
+
+async function 连接流(远程套接字, 网页套接字, 头数据, 重试函数) {
+  let 头 = 头数据, 是否有数据 = false;
+  await 远程套接字.readable.pipeTo(
+    new WritableStream({
+      async write(数据块, 控制器) {
+        是否有数据 = true;
+        if (网页套接字.readyState !== 1) 控制器.error(错误_网页套接字未打开);
+        if (头) {
+          网页套接字.send(await new Blob([头, 数据块]).arrayBuffer());
+          头 = null;
+        } else {
+          网页套接字.send(数据块);
+        }
+      },
+      abort(原因) { console.error("Readable aborted:", 原因); },
+    })
+  ).catch((error) => { console.error("Stream connection error:", error); 安静关闭套接字(网页套接字); });
+
+  if (!是否有数据 && 重试函数) 重试函数();
+}
+
+async function 转发用户数据报(用户数据报块, 网页套接字, 响应头) {
+  try {
+    const 传输控制套接字 = connect({ hostname: '8.8.4.4', port: 53 });
+    let 协议头 = 响应头;
+    const 写入器 = 传输控制套接字.writable.getWriter();
+    await 写入器.write(用户数据报块);
+    写入器.releaseLock();
+    await 传输控制套接字.readable.pipeTo(new WritableStream({
+      async write(数据块) {
+        if (网页套接字.readyState === 1) {
+          if (协议头) {
+            网页套接字.send(await new Blob([协议头, 数据块]).arrayBuffer());
+            协议头 = null;
+          } else {
+            网页套接字.send(数据块);
+          }
+        }
+      },
+    }));
+  } catch (error) {
+    console.error(`DNS forward error: ${error.message}`);
+  }
+}
+
+function 基础64转数组(基础64文本) {
+  if (!基础64文本) return { error: null };
+  try {
+    基础64文本 = 基础64文本.replace(/-/g, '+').replace(/_/g, '/');
+    return { 早期数据: Uint8Array.from(atob(基础64文本), (c) => c.charCodeAt(0)).buffer, error: null };
+  } catch (error) {
+    return { error };
+  }
+}
+
+function 是否有效格式(唯一标识) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(唯一标识);
+}
+
+function 安静关闭套接字(套接字) {
+  try { if (套接字.readyState === 1 || 套接字.readyState === 2) 套接字.close(); }
+  catch (error) { }
+}
+
+const 十六进制表 = Array.from({ length: 256 }, (v, i) => (i + 256).toString(16).slice(1));
+
+function 格式化标识(数组, 偏移 = 0) {
+  const 标识 = (
+    十六进制表[数组[偏移]] + 十六进制表[数组[偏移 + 1]] + 十六进制表[数组[偏移 + 2]] + 十六进制表[数组[偏移 + 3]] + "-" +
+    十六进制表[数组[偏移 + 4]] + 十六进制表[数组[偏移 + 5]] + "-" +
+    十六进制表[数组[偏移 + 6]] + 十六进制表[数组[偏移 + 7]] + "-" +
+    十六进制表[数组[偏移 + 8]] + 十六进制表[数组[偏移 + 9]] + "-" +
+    十六进制表[数组[偏移 + 10]] + 十六进制表[数组[偏移 + 11]] + 十六进制表[数组[偏移 + 12]] + 十六进制表[数组[偏移 + 13]] +
+    十六进制表[数组[偏移 + 14]] + 十六进制表[数组[偏移 + 15]]
+  ).toLowerCase();
+  if (!是否有效格式(标识)) throw new TypeError(错误_无效标识字符串);
+  return 标识;
+}
