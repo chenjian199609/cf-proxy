@@ -8,7 +8,7 @@ function 解码64(文本) {
 }
 
 // --- 硬编码配置 ---
-const 认证令牌 = 'f64bdc57-0f54-4705-bf75-cfd646d98c06';
+const 认证令牌 = '7106aa33-7885-4d58-aef8-53028e507db8';
 let 回退地址 = '';
 const 代理5配置 = '';
 // 手动指定地区（留空则自动检测，可选值：US、SG、JP、HK、KR、DE、SE、NL、FI、GB）
